@@ -600,7 +600,6 @@ function toggleStep(id){state.quest[id]=!state.quest[id];save();renderQuests();}
 
 
 
-document.getElementById('journalInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addJournalEntry();}});
 
 document.querySelectorAll('.tab-btn').forEach(function(btn){
   btn.addEventListener('click',function(){
