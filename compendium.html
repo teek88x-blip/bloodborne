@@ -66,7 +66,7 @@
 </div>
 
 <!-- SEARCH BAR -->
-<div id="searchWrap" style="display:none;padding:0.5rem 1rem;border-bottom:1px solid var(--border-sub);position:sticky;top:96px;z-index:80;background:var(--bg);backdrop-filter:blur(8px)">
+<div id="searchWrap" style="display:none;padding:0.5rem 1rem;border-bottom:1px solid var(--border-sub);position:sticky;top:96px;z-index:95;background:var(--bg);backdrop-filter:blur(8px)">
   <div style="position:relative">
     <input type="search" id="searchInput" placeholder="Search bosses, NPCs, enemies, locations..." style="padding-left:2rem;font-size:0.82rem">
     <span style="position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);color:var(--text-faint);font-size:0.85rem;pointer-events:none">&#128269;</span>
@@ -807,50 +807,49 @@ function doSearch(q){
   results.innerHTML = h;
 }
 
-// Event delegation — clicks on search results bubble up to the container
 document.getElementById('searchResults').addEventListener('click', function(e){
   var row = e.target.closest('.search-result-row');
   if(!row) return;
-  goToResult(row.getAttribute('data-tab'), row.getAttribute('data-id'));
-});
+  var tab    = row.getAttribute('data-tab');
+  var cardId = row.getAttribute('data-id');
 
-function goToResult(tab, cardId){
+  // Close search bar
+  searchOpen = false;
+  document.getElementById('searchWrap').style.display = 'none';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '';
 
-  // Close search first
-  toggleSearch();
-
-  // Switch tab
-  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  // Switch to the correct tab
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
   var tabBtn = document.querySelector('.tab-btn[data-tab="'+tab+'"]');
   if(tabBtn) tabBtn.classList.add('active');
   var panel = document.getElementById('tab-'+tab);
   if(panel) panel.classList.add('active');
 
-  // Pre-open the card in expandState so renderAll picks it up
+  // Mark the card open before rendering
   expandState[cardId] = true;
 
-  // Re-render the relevant section so the card exists in the DOM
+  // Render the tab so the card is in the DOM
   var renderMap = {
-    bosses: renderBosses, characters: renderCharacters,
-    bestiary: renderBestiary, locations: renderLocations,
-    glossary: renderGlossary, quests: renderQuests,
-    progress: renderProgress, primer: renderPrimer
+    bosses:renderBosses, characters:renderCharacters,
+    bestiary:renderBestiary, locations:renderLocations,
+    glossary:renderGlossary, quests:renderQuests,
+    progress:renderProgress, primer:renderPrimer
   };
   if(renderMap[tab]) renderMap[tab]();
 
-  // Scroll to card after DOM settles
+  // Scroll and flash after DOM settles
   setTimeout(function(){
     var card = document.querySelector('[data-id="'+cardId+'"]');
     if(card){
       card.scrollIntoView({behavior:'smooth', block:'center'});
-      // Flash highlight
       card.style.transition = 'box-shadow 0.3s';
       card.style.boxShadow = '0 0 0 2px var(--accent)';
       setTimeout(function(){ card.style.boxShadow = ''; }, 1200);
     }
-  }, 60);
-}
+  }, 80);
+});
 
 document.getElementById('searchInput').addEventListener('input', function(){ doSearch(this.value); });
 document.getElementById('searchInput').addEventListener('keydown', function(e){ if(e.key==='Escape') toggleSearch(); });
