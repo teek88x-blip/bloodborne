@@ -24,6 +24,8 @@
 .section-intro{text-align:center;color:var(--text-dim);font-size:0.75rem;margin-bottom:0.85rem;font-style:italic}
 .empty-state{text-align:center;color:var(--text-faint);font-style:italic;font-size:0.85rem;padding:2.5rem 0;font-family:var(--font-body)}
 .session-form{display:flex;flex-direction:column;gap:0.55rem}
+.search-result-row{display:flex;justify-content:space-between;align-items:center;padding:0.45rem 0.65rem;border-radius:3px;border:1px solid var(--border-sub);background:var(--surface);cursor:pointer;transition:border-color var(--transition)}
+.search-result-row:hover{border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -34,11 +36,7 @@
     <h1 style="font-size:1.2rem;margin-top:0.15rem">Compendium</h1>
   </div>
   <div class="header-controls">
-    <div class="toggle-wrap">
-      <span class="toggle-label">DLC</span>
-      <button class="toggle" id="dlcToggle"></button>
-    </div>
-    <button class="btn btn-icon" id="themeToggle" title="Toggle theme">&#9728;</button>
+<button class="btn btn-icon" id="themeToggle" title="Toggle theme">&#9728;</button>
   </div>
 </header>
 
@@ -51,11 +49,38 @@
   <button class="tab-btn" data-tab="bestiary">Bestiary</button>
   <button class="tab-btn" data-tab="locations">Locations</button>
   <button class="tab-btn" data-tab="quests">Quests</button>
+  <button class="tab-btn" id="searchToggle" onclick="toggleSearch()" title="Search" style="margin-left:auto">&#128269;</button>
 </nav>
+
+<!-- SPOILER SHIELD OVERLAY -->
+<div id="spoilerOverlay" style="position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.92);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1.5rem;display:none">
+  <div style="max-width:440px;width:100%;border:1px solid #9f1239;border-radius:4px;background:#0c0a09;padding:1.5rem">
+    <p style="font-size:0.6rem;letter-spacing:0.25em;text-transform:uppercase;font-family:var(--font-display);color:#9f1239;margin-bottom:0.5rem">Story Beat Ahead</p>
+    <h2 id="spoilerTitle" style="font-family:var(--font-display);font-size:1.2rem;color:#fb7185;margin-bottom:0.75rem"></h2>
+    <p id="spoilerText" style="font-size:0.84rem;color:#b0a898;line-height:1.7;margin-bottom:1.25rem"></p>
+    <div style="display:flex;gap:0.6rem">
+      <button id="spoilerConfirm" class="btn btn-primary" style="flex:1;padding:0.65rem;border-color:#9f1239;color:#fb7185;background:rgba(159,18,57,0.15)">Understood — Unlock</button>
+      <button id="spoilerCancel" class="btn" style="flex:1;padding:0.65rem">Go Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH BAR -->
+<div id="searchWrap" style="display:none;padding:0.5rem 1rem;border-bottom:1px solid var(--border-sub);position:sticky;top:96px;z-index:80;background:var(--bg);backdrop-filter:blur(8px)">
+  <div style="position:relative">
+    <input type="search" id="searchInput" placeholder="Search bosses, NPCs, enemies, locations..." style="padding-left:2rem;font-size:0.82rem">
+    <span style="position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);color:var(--text-faint);font-size:0.85rem;pointer-events:none">&#128269;</span>
+  </div>
+  <div id="searchResults" style="margin-top:0.5rem;display:flex;flex-direction:column;gap:0.3rem"></div>
+</div>
 
 <main class="page-wrap" style="padding-top:0.25rem;padding-bottom:1rem">
 <section class="tab-panel active" id="tab-primer"><div id="primer-cards"></div></section>
 <section class="tab-panel" id="tab-progress">
+  <div class="bloodmoon-banner" id="bloodmoonBanner" style="display:none">
+    <span class="bloodmoon-icon">&#127754;</span>
+    <span>The Blood Moon has risen. Rom has been defeated — the world has changed permanently. The sky is red. Check on any NPCs you sent to Oedon Chapel.</span>
+  </div>
   <div class="surface-box mb-md">
     <p class="eyebrow mb-sm">Currently At</p>
     <p id="currentAreaName" style="font-size:1.2rem;font-family:var(--font-display);color:var(--accent-s);margin-bottom:0.15rem"></p>
@@ -415,22 +440,42 @@ lore:"The Fishing Hamlet is the end of the DLC and the bottom of the game's mora
 var TIMELINE=[{era:"Ancient Times",color:"#7c3aed",events:[{title:"The Pthumerians",text:"An ancient civilisation discovers the Great Ones deep beneath the earth. They make contact. The Great Ones leave behind wisdom and the Old Blood."},{title:"The Chalice Dungeons",text:"Pthumerian society builds labyrinthine tombs to house their discoveries. The dungeons beneath Yharnam still hold relics of this age — and things that should not be awake."}]},{era:"Founding of Byrgenwerth",color:"#1d4ed8",events:[{title:"Master Willem's Discovery",text:"Scholars from Byrgenwerth College descend into the Chalice Dungeons. Master Willem becomes obsessed with ascending to a higher plane — more eyes, more insight."},{title:"Laurence the Student",text:"Laurence studies under Willem. He believes the Old Blood should be shared with humanity as medicine. Willem disagrees. This split will define everything that follows."}]},{era:"The Healing Church",color:"#0f766e",events:[{title:"The Schism",text:"Laurence breaks from Byrgenwerth and founds the Healing Church in Yharnam, taking the Old Blood with him."},{title:"Blood Ministration",text:"The Healing Church introduces blood ministration. The sick are healed. Pilgrims arrive from across the world. The Church grows wealthy and powerful."},{title:"The Hunters are Founded",text:"Gehrman becomes the first Hunter. The Church trains hunters to cull beasts — people transformed by overexposure to the blood."},{title:"Cainhurst and the Vilebloods",text:"Laurence brings blood to Cainhurst and its queen, Annalise. The Vilebloods are born. Logarius and his Executioners lay siege to Cainhurst. Logarius dies sealing Annalise away."}]},{era:"The Dream and Gehrman",color:"#b45309",events:[{title:"The Hunter's Dream",text:"The Moon Presence forms a pact with Gehrman. The Hunter's Dream is created: a liminal space where hunters revive after death, allowing the Hunt to continue indefinitely."},{title:"Gehrman's Trap",text:"Gehrman discovers he cannot leave the Dream. He is its caretaker — perhaps its prisoner. He creates the Doll for company and grows old waiting, tending an endless cycle of hunters."},{title:"The Old Hunters",text:"A generation of hunters serves the Church. Among them: Lady Maria, Gehrman's finest student. They do terrible things — including the massacre at the Fishing Hamlet. Their sins are sealed in their own Nightmare."}]},{era:"The Beast Plague",color:"#9f1239",events:[{title:"The Scourge Spreads",text:"Beasthood spreads through Yharnam faster than the Church can contain it. Old Yharnam is burned in an early attempt to stop the plague. It doesn't work."},{title:"The Church's Secret Research",text:"The upper echelons of the Church begin experimenting with direct contact with the Great Ones. They hide Ebrietas — a Great One left behind — and use her to empower their rituals."},{title:"The School of Mensis",text:"A splinter group of scholars performs a ritual to contact the Great Ones. Micolash remains in the Nightmare, endlessly chasing communion with something vast."}]},{era:"The Night of the Hunt",color:"#92400e",events:[{title:"You Arrive",text:"A stranger comes to Yharnam for blood ministration. The night of the Hunt begins. The plague is at its peak. Something is about to change."},{title:"The Blood Moon",text:"Rom the Vacuous Spider maintained a veil hiding the true state of the world. Her death triggers the Blood Moon — a permanent world-state shift. The Nightmare bleeds into reality."},{title:"The Three Endings",text:"The Hunter faces Gehrman, who offers release from the Dream. Three choices: accept death and wake, refuse and fight, or — if three Umbilical Cords have been consumed — transcend."}]}];
 var NPC_QUESTS=[{name:"Eileen the Crow",faction:"Hunters",missable:true,steps:[{id:"e1",text:"Meet Eileen in Central Yharnam near the sewers or a hunter corpse.",warn:false},{id:"e2",text:"Speak to her again after opening the gate shortcut near Gascoigne's lamp.",warn:false},{id:"e3",text:"Find her wounded in Cathedral Ward near the Grand Cathedral lamp. Do NOT defeat Vicar Amelia before triggering this.",warn:true},{id:"e4",text:"Defeat Henryk near Gascoigne's grave to complete her quest. She rewards you with the Hunter rune.",warn:false},{id:"e5",text:"Vicar Amelia's death locks you out if step 3 is missed.",warn:true}]},{name:"Alfred",faction:"Executioners",missable:true,steps:[{id:"a1",text:"Meet Alfred in Cathedral Ward near the first lamp.",warn:false},{id:"a2",text:"Give him the Unopened Summons found in Cainhurst Castle.",warn:false},{id:"a3",text:"Visit Annalise's chamber in Cainhurst after giving Alfred the summons.",warn:true},{id:"a4",text:"Find Alfred near the Oedon Chapel. He gives you the Radiance rune and reveals what he has become.",warn:false}]},{name:"Arianna",faction:"Civilian",missable:true,steps:[{id:"ar1",text:"Find Arianna in lower Cathedral Ward. Direct her to Oedon Chapel.",warn:false},{id:"ar2",text:"She gives you the Blood of Arianna when spoken to.",warn:false},{id:"ar3",text:"Save her BEFORE defeating Rom. Any NPCs not safely housed when the Blood Moon rises are lost.",warn:true},{id:"ar4",text:"After the Blood Moon, visit Oedon Chapel. Something has happened to Arianna.",warn:true}]},{name:"Iosefka",faction:"Healing Church",missable:false,steps:[{id:"io1",text:"Speak to Iosefka through her clinic door early in the game.",warn:false},{id:"io2",text:"Her voice changes if you send NPCs to her. The person behind the door is not the original.",warn:true},{id:"io3",text:"Access the back of the clinic via the Forbidden Woods shortcut to see the truth.",warn:false},{id:"io4",text:"After defeating Rom, Iosefka becomes hostile. Defeat her to receive the One Third of Umbilical Cord.",warn:true}]},{name:"Sister Adella",faction:"Healing Church",missable:true,steps:[{id:"ad1",text:"Find Sister Adella in Hypogean Gaol. Direct her to Oedon Chapel.",warn:false},{id:"ad2",text:"Do NOT let Arianna give you her blood while Adella is in the Chapel — she will become hostile and kill Arianna.",warn:true},{id:"ad3",text:"If she survives, she gives you Arianna's Blood after the Blood Moon.",warn:false}]},{name:"Djura",faction:"Hunters",missable:false,steps:[{id:"dj1",text:"Enter Old Yharnam. Djura opens fire from his tower.",warn:false},{id:"dj2",text:"Option A: Kill him immediately for the Powder Keg Hunter Badge only.",warn:false},{id:"dj3",text:"Option B (recommended): Defeat Darkbeast Paarl first. Approach from below without killing beasts and he stands down, giving you his gesture AND the badge.",warn:true}]},{name:"Valtr, Master of the League",faction:"The League",missable:false,steps:[{id:"v1",text:"Find Valtr in the Forbidden Woods, in the shortcut elevator alcove.",warn:false},{id:"v2",text:"Equip the Impurity rune he gives you to join the League.",warn:false},{id:"v3",text:"Collect 5 Vermin by crushing them after successful co-op hunts and offer them to Valtr.",warn:false},{id:"v4",text:"After 5 Vermin, Valtr gives you his weapon. Return later — his helmet is on the ground. He is gone.",warn:true}]},{name:"Viola's Daughter",faction:"Civilian",missable:true,steps:[{id:"vd1",text:"Speak to the young girl in a window in Central Yharnam before fighting Gascoigne.",warn:false},{id:"vd2",text:"Find Viola's corpse near Gascoigne's arena and take the Red Jewelled Brooch.",warn:false},{id:"vd3",text:"Do NOT give her the brooch. Send her to Oedon Chapel instead.",warn:true},{id:"vd4",text:"If sent to safety she survives, though she will be gone from the window.",warn:false}]}];
 
+var ROM_INDEX = 14; // AREAS index — defeating Rom triggers Blood Moon
+var SPOILER_BEATS = [
+  {idx:14, title:'The Blood Moon', warning:'Defeating Rom, the Vacuous Spider triggers a permanent world-state change. The sky turns red, NPCs in unsafe locations are lost, and several enemy placements change. This is a point of no return — make sure any NPCs you want to save have been sent to Oedon Chapel first.'},
+  {idx:25, title:'The Final Choice', warning:'Gehrman is asking the Hunter to lay down their life and leave the Dream. This is the endgame — three possible endings branch from here. The player will know what to do.'},
+  {idx:26, title:'The True Ending', warning:'This ending requires the player to have consumed three Umbilical Cords. If they have, something extraordinary is about to happen.'}
+];
+
 var state={
   area:parseInt(localStorage.getItem('bb-area')||'0'),
-  dlc:localStorage.getItem('bb-dlc')==='true',
+  dlc:true,
   theme:localStorage.getItem('bb-theme')||'dark',
   quest:JSON.parse(localStorage.getItem('bb-quest')||'{}'),
   recaps:JSON.parse(localStorage.getItem('bb-recaps')||'[]'),
-  journal:JSON.parse(localStorage.getItem('bb-journal')||'[]')
+  journal:JSON.parse(localStorage.getItem('bb-journal')||'[]'),
+  bossKills:JSON.parse(localStorage.getItem('bb-boss-kills')||'{}')
 };
+
+function isBloodMoon(){ return state.area > ROM_INDEX; }
+
+function applyTheme(){
+  var bm = isBloodMoon();
+  document.documentElement.setAttribute('data-bloodmoon', bm ? '1' : '0');
+  if(state.theme==='light'){
+    document.documentElement.setAttribute('data-theme','light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+}
 
 function save(){
   localStorage.setItem('bb-area',state.area);
-  localStorage.setItem('bb-dlc',state.dlc);
   localStorage.setItem('bb-theme',state.theme);
   localStorage.setItem('bb-quest',JSON.stringify(state.quest));
   localStorage.setItem('bb-recaps',JSON.stringify(state.recaps));
   localStorage.setItem('bb-journal',JSON.stringify(state.journal));
+  localStorage.setItem('bb-boss-kills',JSON.stringify(state.bossKills));
 }
 
 var expandState={};
@@ -452,7 +497,7 @@ function buildCard(o){
   return '<div class="card card-left-bar '+locked+openCls+'" data-id="'+o.id+'" style="border-left-color:'+(o.locked?'var(--border-sub)':o.lc||'var(--accent)')+'">'+
     '<div class="card-header" onclick="toggleCard(this)">'+
       '<div>'+
-        '<div class="card-title">'+o.title+'</div>'+
+        '<div class="card-title">'+(o.titleHtml||o.title)+'</div>'+
         (o.s1?'<div class="card-sub1" style="color:'+(o.s1c||'var(--accent)')+'">'+o.s1+'</div>':'')+
         (o.s2?'<div class="card-sub2">'+o.s2+'</div>':'')+
       '</div>'+
@@ -486,6 +531,8 @@ function renderProgress(){
   var a=state.area;
   document.getElementById('currentAreaName').textContent=AREAS[a].name;
   document.getElementById('currentPhase').textContent=PHASE_LABELS[AREAS[a].phase];
+  var bmBanner = document.getElementById('bloodmoonBanner');
+  if(bmBanner) bmBanner.style.display = isBloodMoon() ? 'flex' : 'none';
   var h='';
   AREAS.filter(function(x){return !x.dlc||state.dlc;}).forEach(function(x){
     var idx=AREAS.indexOf(x);
@@ -505,7 +552,29 @@ function renderProgress(){
   document.getElementById('phaseDots').innerHTML=pd;
 }
 
-function setArea(idx){state.area=idx;save();renderAll();}
+function setArea(idx){
+  // Check for spoiler beats between current and new position
+  var beat = SPOILER_BEATS.find(function(b){ return b.idx === idx && idx > state.area; });
+  if(beat){
+    showSpoilerShield(beat, function(){ state.area=idx; save(); applyTheme(); renderAll(); });
+    return;
+  }
+  state.area=idx; save(); applyTheme(); renderAll();
+}
+
+function showSpoilerShield(beat, onConfirm){
+  var overlay = document.getElementById('spoilerOverlay');
+  document.getElementById('spoilerTitle').textContent = beat.title;
+  document.getElementById('spoilerText').textContent = beat.warning;
+  overlay.style.display = 'flex';
+  document.getElementById('spoilerConfirm').onclick = function(){
+    overlay.style.display = 'none';
+    onConfirm();
+  };
+  document.getElementById('spoilerCancel').onclick = function(){
+    overlay.style.display = 'none';
+  };
+}
 
 function renderGlossary(){
   var h='';
@@ -524,12 +593,34 @@ function renderCharacters(){
   document.getElementById('character-cards').innerHTML=h;
 }
 
+function toggleBossKill(btn){
+  var name = btn.getAttribute('data-boss');
+  state.bossKills[name] = !state.bossKills[name];
+  save();
+  renderBosses();
+}
+
 function renderBosses(){
-  var h='';
+  var killed = BOSSES.filter(function(b){ return state.bossKills[b.name]; }).length;
+  var total  = BOSSES.filter(function(b){ return !b.dlc||state.dlc; }).length;
+  var h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem">'
+    + '<p style="font-size:0.68rem;color:var(--text-dim);font-style:italic">Tap the skull to mark defeated.</p>'
+    + '<span style="font-size:0.68rem;font-family:var(--font-display);color:var(--accent)">'+killed+' / '+total+' slain</span>'
+    + '</div>';
   BOSSES.filter(function(b){return !b.dlc||state.dlc;}).forEach(function(b){
+    var killed = !!state.bossKills[b.name];
+    var locked = b.u > state.area;
+    var safeName = b.name.replace(/'/g,"\\'");
+    var killBtn = !locked
+      ? '<button onclick="event.stopPropagation();toggleBossKill(this)" data-boss="'+b.name+'" style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:'+(killed?'1':'0.3')+';transition:opacity 0.2s;padding:0 0.2rem" title="'+(killed?'Defeated':'Mark defeated')+'">&#128128;</button>'
+      : '';
+    var titleHtml = '<div style="display:flex;align-items:center;gap:0.4rem">'
+      + '<span style="'+(killed?'text-decoration:line-through;color:var(--text-faint)':'')+'">' + b.name + '</span>'
+      + killBtn
+      + '</div>';
     var body='<p style="font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--accent);margin-top:0.65rem;margin-bottom:0.1rem">Lore</p>'+lore(b.lore)+
       '<p style="font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--accent);margin-top:0.6rem;margin-bottom:0.1rem">Watcher Notes</p>'+lore(b.notes);
-    h+=buildCard({id:'b-'+b.name,locked:b.u>state.area,lc:b.opt?'var(--text-dim)':'var(--accent)',title:b.name,s1:'~ '+b.area,s1c:'var(--text-dim)',s2:b.opt?'Optional':'Required',art:b.art,badge:b.dlc?'DLC':null,bc:'#7c3aed',body:body});
+    h+=buildCard({id:'b-'+b.name,locked:locked,lc:b.opt?'var(--text-dim)':'var(--accent)',titleHtml:titleHtml,title:b.name,s1:'~ '+b.area,s1c:'var(--text-dim)',s2:b.opt?'Optional':'Required',art:b.art,badge:b.dlc?'DLC':null,bc:'#7c3aed',body:body});
   });
   document.getElementById('boss-cards').innerHTML=h;
 }
@@ -611,19 +702,104 @@ document.querySelectorAll('.tab-btn').forEach(function(btn){
 });
 
 var tt=document.getElementById('themeToggle');
-if(state.theme==='light'){document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';}
 tt.addEventListener('click',function(){
-  var il=document.documentElement.getAttribute('data-theme')==='light';
-  if(il){document.documentElement.removeAttribute('data-theme');tt.textContent='\u2600';state.theme='dark';}
-  else{document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';state.theme='light';}
-  save();
+  state.theme = state.theme==='light' ? 'dark' : 'light';
+  tt.textContent = state.theme==='light' ? '\uD83C\uDF19' : '\u2600';
+  save(); applyTheme();
 });
 
-var dt=document.getElementById('dlcToggle');
-if(state.dlc)dt.classList.add('on');
-dt.addEventListener('click',function(){state.dlc=!state.dlc;dt.classList.toggle('on',state.dlc);save();renderAll();});
 
-function renderAll(){renderPrimer();renderProgress();renderGlossary();renderCharacters();renderBosses();renderBestiary();renderLocations();renderQuests();}
+function renderAll(){applyTheme();renderPrimer();renderProgress();renderGlossary();renderCharacters();renderBosses();renderBestiary();renderLocations();renderQuests();}
+
+// ─── SEARCH ───────────────────────────────────────────────────────────────────
+var searchOpen = false;
+function toggleSearch(){
+  searchOpen = !searchOpen;
+  var wrap = document.getElementById('searchWrap');
+  wrap.style.display = searchOpen ? 'block' : 'none';
+  if(searchOpen){ document.getElementById('searchInput').focus(); }
+  else { document.getElementById('searchInput').value=''; document.getElementById('searchResults').innerHTML=''; }
+}
+
+function makeSearchRow(hit){
+  var el = document.createElement('div');
+  el.className = 'search-result-row';
+  el.setAttribute('data-tab', hit.tab);
+  el.setAttribute('data-id', hit.id);
+  el.onclick = function(){ goToResult(this); };
+  el.innerHTML = '<div>'
+    + '<div style="font-size:0.82rem;color:'+(hit.locked?'var(--text-faint)':'var(--text)')+'">'+hit.label+'</div>'
+    + '<div style="font-size:0.62rem;color:var(--text-dim)">'+hit.sub+'</div>'
+    + '</div>'
+    + (hit.locked?'<span style="font-size:0.55rem;color:var(--text-faint);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase">Locked</span>':'');
+  return el.outerHTML;
+}
+
+function doSearch(q){
+  var results = document.getElementById('searchResults');
+  if(!q.trim()){ results.innerHTML=''; return; }
+  var ql = q.toLowerCase();
+  var hits = [];
+
+  BOSSES.forEach(function(b){
+    if((b.name+' '+b.area).toLowerCase().indexOf(ql)>=0)
+      hits.push({label:b.name, sub:b.area+' · Boss', tab:'bosses', id:'b-'+b.name, locked:b.u>state.area});
+  });
+  NPCS.forEach(function(n){
+    if(!n.dlc||state.dlc)
+    if((n.name+' '+n.role).toLowerCase().indexOf(ql)>=0)
+      hits.push({label:n.name, sub:n.f+' · NPC', tab:'characters', id:'n-'+n.name, locked:n.u>state.area});
+  });
+  ENEMIES.forEach(function(e){
+    if(e.name.toLowerCase().indexOf(ql)>=0)
+      hits.push({label:e.name, sub:e.t+' · '+e.fs, tab:'bestiary', id:'e-'+e.name, locked:e.u>state.area});
+  });
+  LOCATIONS.forEach(function(l){
+    if(!l.dlc||state.dlc)
+    if(l.name.toLowerCase().indexOf(ql)>=0)
+      hits.push({label:l.name, sub:l.type+' · Location', tab:'locations', id:'l-'+l.name, locked:l.u>state.area});
+  });
+  GLOSSARY.forEach(function(g){
+    if(g.term.toLowerCase().indexOf(ql)>=0)
+      hits.push({label:g.term, sub:'Glossary', tab:'glossary', id:'g-'+g.term, locked:g.u>state.area});
+  });
+
+  if(!hits.length){ results.innerHTML='<p style="font-size:0.78rem;color:var(--text-faint);font-style:italic;padding:0.3rem 0">No results</p>'; return; }
+
+  var h = '';
+  hits.slice(0,8).forEach(function(hit){
+    h += makeSearchRow(hit);
+  });
+  results.innerHTML = h;
+}
+
+function goToResult(el){
+  var tab = el.getAttribute('data-tab');
+  var cardId = el.getAttribute('data-id');
+  // Switch to correct tab
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  var tabBtn = document.querySelector('.tab-btn[data-tab="'+tab+'"]');
+  if(tabBtn) tabBtn.classList.add('active');
+  var panel = document.getElementById('tab-'+tab);
+  if(panel) panel.classList.add('active');
+  // Close search
+  toggleSearch();
+  // Open the card
+  setTimeout(function(){
+    var card = document.querySelector('[data-id="'+cardId+'"]');
+    if(card&&!card.classList.contains('locked')){
+      if(!card.classList.contains('open')){
+        card.classList.add('open');
+        expandState[cardId]=true;
+      }
+      card.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  }, 80);
+}
+
+document.getElementById('searchInput').addEventListener('input', function(){ doSearch(this.value); });
+document.getElementById('searchInput').addEventListener('keydown', function(e){ if(e.key==='Escape') toggleSearch(); });
 renderAll();
 </script>
 </body>
