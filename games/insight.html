@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insight Tracker — Bloodborne</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.game-wrap{max-width:540px;margin:0 auto;padding:1rem 1rem 5rem}
+.stats-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.85rem}
+.stat-box{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius);padding:0.5rem 0.6rem;text-align:center}
+.stat-value{font-family:var(--font-display);font-size:1.4rem;font-weight:700;line-height:1}
+.stat-label{font-size:0.55rem;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;font-family:var(--font-display);margin-top:0.2rem}
+.frenzy-bar-wrap{margin-bottom:0.85rem}
+.frenzy-bar-bg{height:10px;border-radius:5px;background:var(--border-sub);overflow:hidden;margin:0.25rem 0}
+.frenzy-bar-fill{height:10px;border-radius:5px;transition:width 0.3s;background:linear-gradient(to right,#065f46,#b45309,#9f1239)}
+.hand-area{display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.85rem}
+.card-item{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius);padding:0.65rem 0.85rem;cursor:pointer;transition:border-color 0.15s,background 0.15s;user-select:none}
+.card-item:hover{border-color:var(--accent);background:var(--accent-dim)}
+.card-item.discard-mode{border-color:#b91c1c;cursor:pointer}
+.card-item.discard-mode:hover{background:rgba(150,20,20,0.2)}
+.card-name{font-weight:600;font-size:0.88rem;margin-bottom:0.15rem}
+.card-effects{display:flex;gap:0.5rem;font-size:0.68rem;flex-wrap:wrap}
+.card-effect{padding:1px 6px;border-radius:2px;border:1px solid;font-family:var(--font-display);font-size:0.55rem;letter-spacing:0.08em}
+.card-desc{font-size:0.72rem;color:var(--text-dim);margin-top:0.2rem;font-style:italic;line-height:1.45}
+.action-bar{display:flex;gap:0.5rem;margin-bottom:0.85rem;flex-wrap:wrap}
+.power-bar-bg{height:5px;border-radius:3px;background:var(--border-sub);overflow:hidden;margin-top:0.25rem}
+.power-bar-fill{height:5px;border-radius:3px;background:#7c3aed;transition:width 0.3s}
+.moon-event{border:2px solid #9f1239;border-radius:var(--radius);background:rgba(159,18,57,0.15);padding:1rem;text-align:center;margin-bottom:0.85rem;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(159,18,57,0.4)}50%{box-shadow:0 0 15px 4px rgba(159,18,57,0.2)}}
+.moon-title{font-family:var(--font-display);font-size:1rem;color:#fb7185;margin-bottom:0.3rem}
+.moon-text{font-size:0.78rem;color:#fca5a5;line-height:1.6;margin-bottom:0.65rem}
+.turn-log{border:1px solid var(--border-sub);border-radius:var(--radius);overflow:hidden;margin-bottom:0.5rem}
+.log-item{padding:0.3rem 0.65rem;font-size:0.72rem;color:var(--text-dim);border-bottom:1px solid var(--border-sub)}
+.log-item:last-child{border-bottom:none}
+.game-over-box{border:2px solid var(--red);border-radius:var(--radius);padding:1.5rem 1rem;text-align:center;background:rgba(159,18,57,0.1)}
+.win-box{border:2px solid #065f46;border-radius:var(--radius);padding:1.5rem 1rem;text-align:center;background:rgba(6,95,70,0.1)}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <a href="../index.html" style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);text-decoration:none">&larr; Hub</a>
+    <h1 style="font-size:1.2rem;margin-top:0.1rem">Insight Tracker</h1>
+  </div>
+  <button class="btn btn-icon" id="themeToggle">&#9728;</button>
+</header>
+<div class="game-wrap" id="app"></div>
+<footer class="site-footer">Don't lose your mind</footer>
+
+<script>
+var CARD_DEFS=[
+  {id:"vial",name:"Blood Vial",rarity:"common",insight:0,frenzy:-15,power:0,desc:"Precious blood vial. Soothes the nerves.",insightColor:"",frenzyColor:"#059669"},
+  {id:"vial2",name:"Blood Vial",rarity:"common",insight:0,frenzy:-15,power:0,desc:"Precious blood vial. Soothes the nerves.",insightColor:"",frenzyColor:"#059669"},
+  {id:"rune",name:"Caryll Rune",rarity:"common",insight:0,frenzy:-12,power:0,desc:"Transcribed wisdom. Calms the mind.",insightColor:"",frenzyColor:"#059669"},
+  {id:"rune2",name:"Caryll Rune",rarity:"common",insight:0,frenzy:-12,power:0,desc:"Transcribed wisdom. Calms the mind.",insightColor:"",frenzyColor:"#059669"},
+  {id:"pungent",name:"Pungent Cocktail",rarity:"common",insight:0,frenzy:-8,power:0,desc:"Distracts beasts. Brief relief.",insightColor:"",frenzyColor:"#059669"},
+  {id:"pungent2",name:"Pungent Cocktail",rarity:"common",insight:0,frenzy:-8,power:0,desc:"Distracts beasts. Brief relief.",insightColor:"",frenzyColor:"#059669"},
+  {id:"beast",name:"Beast Encounter",rarity:"common",insight:1,frenzy:10,power:1,desc:"The beasts of Yharnam press closer.",insightColor:"#b45309",frenzyColor:"#b45309"},
+  {id:"beast2",name:"Beast Encounter",rarity:"common",insight:1,frenzy:10,power:1,desc:"The beasts of Yharnam press closer.",insightColor:"#b45309",frenzyColor:"#b45309"},
+  {id:"madness",name:"Frenzied Madness",rarity:"common",insight:2,frenzy:18,power:0,desc:"The blood runs hot. The mind flinches.",insightColor:"#b45309",frenzyColor:"#b91c1c"},
+  {id:"lamp",name:"Lamp Found",rarity:"common",insight:0,frenzy:-6,power:2,desc:"A lamp. Sanctuary, briefly.",insightColor:"",frenzyColor:"#059669"},
+  {id:"lamp2",name:"Lamp Found",rarity:"common",insight:0,frenzy:-6,power:2,desc:"A lamp. Sanctuary, briefly.",insightColor:"",frenzyColor:"#059669"},
+  {id:"ally",name:"Hunter's Ally",rarity:"uncommon",insight:0,frenzy:-20,power:0,desc:"Another Hunter joins the night. Comfort in company.",insightColor:"",frenzyColor:"#059669"},
+  {id:"vermin",name:"Vermin Found",rarity:"uncommon",insight:1,frenzy:-5,power:0,desc:"Crushed underfoot. Something stirs in your stomach.",insightColor:"#b45309",frenzyColor:"#059669"},
+  {id:"curse",name:"Cursed Blood",rarity:"uncommon",insight:3,frenzy:15,power:0,desc:"Tainted ministration. Twisted insight floods in.",insightColor:"#9f1239",frenzyColor:"#9f1239"},
+  {id:"npc",name:"Survivor Rescued",rarity:"uncommon",insight:0,frenzy:-10,power:3,desc:"Someone still human. Their relief echoes.",insightColor:"",frenzyColor:"#059669"},
+  {id:"coldblood",name:"Frenzied Coldblood",rarity:"rare",insight:6,frenzy:15,power:0,desc:"Dense blood echoes. Power at a price.",insightColor:"#7c3aed",frenzyColor:"#9f1239"},
+  {id:"skull",name:"Laurence's Skull",rarity:"rare",insight:6,frenzy:10,power:3,desc:"The first Vicar's skull, burning eternally.",insightColor:"#7c3aed",frenzyColor:"#b45309"},
+  {id:"cord",name:"Umbilical Cord",rarity:"rare",insight:8,frenzy:5,power:0,desc:"Truth that cannot be unfelt. The cosmos opens.",insightColor:"#6d28d9",frenzyColor:"#b45309"}
+];
+
+function buildDeck(){
+  var deck=[];
+  CARD_DEFS.forEach(function(def,i){
+    deck.push(Object.assign({},def,{uid:def.id+'-'+i}));
+  });
+  return shuffle(deck);
+}
+
+function shuffle(a){var b=[].concat(a);for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
+
+function drawCard(state){
+  if(state.deck.length===0){state.deck=shuffle(state.discard.slice());state.discard=[];}
+  if(state.deck.length===0)return null;
+  var card=state.deck.shift();
+  state.hand.push(card);
+  return card;
+}
+
+function newGame(){
+  var deck=buildDeck();
+  var state={insight:0,frenzy:0,power:0,turn:0,deck:deck,hand:[],discard:[],log:[],status:'playing',discardMode:false,moonActive:false};
+  for(var i=0;i<3;i++)drawCard(state);
+  return state;
+}
+
+var G=newGame();
+var screen='menu';
+
+function playCard(uid){
+  if(G.status!=='playing')return;
+  if(G.discardMode){discardCard(uid);return;}
+  var idx=G.hand.findIndex(function(c){return c.uid===uid;});
+  if(idx<0)return;
+  var card=G.hand.splice(idx,1)[0];
+  G.discard.push(card);
+  G.insight=Math.max(0,G.insight+card.insight);
+  G.frenzy=Math.max(0,Math.min(100,G.frenzy+card.frenzy));
+  G.power=Math.max(0,G.power+card.power);
+  G.turn++;
+  var logMsg=card.name;
+  if(card.insight>0)logMsg+=' +'+card.insight+' Insight';
+  if(card.frenzy>0)logMsg+=' +'+card.frenzy+' Frenzy';
+  else if(card.frenzy<0)logMsg+=' '+card.frenzy+' Frenzy';
+  G.log.unshift(logMsg);
+  if(G.log.length>5)G.log.pop();
+  drawCard(G);
+  checkEvents();
+  render();
+}
+
+function discardCard(uid){
+  if(!G.discardMode||G.power<10)return;
+  var idx=G.hand.findIndex(function(c){return c.uid===uid;});
+  if(idx<0)return;
+  var card=G.hand.splice(idx,1)[0];
+  G.discard.push(card);
+  G.power-=10;
+  G.discardMode=false;
+  drawCard(G);
+  G.log.unshift('Channelled power — discarded '+card.name);
+  if(G.log.length>5)G.log.pop();
+  render();
+}
+
+function usePower(){
+  if(G.power<10||G.discardMode)return;
+  G.discardMode=true;
+  render();
+}
+
+function dismissMoon(){
+  if(!G.moonActive)return;
+  G.frenzy=Math.min(100,G.frenzy+20);
+  G.moonActive=false;
+  G.log.unshift('Moon Presence dismissed — Frenzy +20');
+  if(G.log.length>5)G.log.pop();
+  checkEvents();
+  render();
+}
+
+function checkEvents(){
+  if(G.frenzy>=75&&!G.moonActive&&G.status==='playing'){G.moonActive=true;}
+  if(G.frenzy>=100){G.status='lose';G.moonActive=false;}
+  if(G.insight>=30){G.status='win';}
+}
+
+function endDiscard(){G.discardMode=false;render();}
+
+function render(){
+  var app=document.getElementById('app');
+  if(screen==='menu'){app.innerHTML=renderMenu();return;}
+  if(G.status==='lose'){app.innerHTML=renderGameOver();return;}
+  if(G.status==='win'){app.innerHTML=renderWin();return;}
+  app.innerHTML=renderGame();
+}
+
+function renderMenu(){
+  var h='<div class="surface-box mb-md">';
+  h+='<p style="font-size:0.95rem;color:var(--accent-s);font-family:var(--font-display);margin-bottom:0.5rem">The Hunt</p>';
+  h+='<p style="font-size:0.82rem;color:var(--text-mid);line-height:1.7">Gather Insight without losing your mind to Frenzy. Play cards from your hand each turn — some raise Insight, some raise Frenzy, some do both. Reach 30 Insight before Frenzy hits 100.</p>';
+  h+='<div style="margin-top:0.75rem;border-top:1px solid var(--border-sub);padding-top:0.65rem">';
+  h+='<p style="font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font-display);color:var(--accent);margin-bottom:0.35rem">Power</p>';
+  h+='<p style="font-size:0.78rem;color:var(--text-mid);line-height:1.6">Accumulate 10 Power and tap &#9889; Use Power to enter discard mode — tap any card in hand to discard it and draw a replacement. Use this to cycle dangerous cards away.</p>';
+  h+='<p style="font-size:0.78rem;color:var(--text-mid);margin-top:0.35rem;line-height:1.6">At 75 Frenzy, the Moon Presence appears. Dismiss it to avoid instant defeat — but dismissal costs 20 Frenzy.</p>';
+  h+='</div></div>';
+  h+='<button class="btn btn-primary" style="width:100%;padding:0.85rem" onclick="screen=\'game\';render()">Begin the Hunt</button>';
+  return h;
+}
+
+function rarityColor(r){return r==='rare'?'#7c3aed':r==='uncommon'?'#0f766e':'#57534e';}
+function rarityGlow(r){return r==='rare'?'#c4b5fd':r==='uncommon'?'#2dd4bf':'#9ca3af';}
+
+function renderGame(){
+  var h='';
+  var frenzyPct=Math.min(100,G.frenzy);
+  var insightPct=Math.min(100,(G.insight/30)*100);
+
+  h+='<div class="stats-bar">';
+  h+='<div class="stat-box"><div class="stat-value" style="color:var(--accent-s)">'+G.insight+'<span style="font-size:0.7rem;color:var(--text-faint)">/30</span></div><div class="stat-label">Insight</div></div>';
+  h+='<div class="stat-box"><div class="stat-value" style="color:'+(G.frenzy>=75?'#fb7185':G.frenzy>=50?'#fbbf24':'#34d399')+'">'+G.frenzy+'<span style="font-size:0.7rem;color:var(--text-faint)">/100</span></div><div class="stat-label">Frenzy</div></div>';
+  h+='<div class="stat-box"><div class="stat-value" style="color:#c4b5fd">'+G.power+'</div><div class="stat-label">Power</div><div class="power-bar-bg"><div class="power-bar-fill" style="width:'+Math.min(100,G.power*10)+'%"></div></div></div>';
+  h+='</div>';
+
+  h+='<div class="frenzy-bar-wrap">';
+  h+='<div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--text-faint);margin-bottom:0.15rem"><span>Frenzy</span><span>Turn '+G.turn+'</span></div>';
+  h+='<div class="frenzy-bar-bg"><div class="frenzy-bar-fill" style="width:'+frenzyPct+'%"></div></div></div>';
+
+  if(G.moonActive){
+    h+='<div class="moon-event">';
+    h+='<div class="moon-title">&#127754; Moon Presence</div>';
+    h+='<p class="moon-text">The Moon Presence has descended. Dismiss it or it will consume you. Frenzy +20 on dismissal.</p>';
+    h+='<button class="btn btn-primary" onclick="dismissMoon()" style="border-color:#9f1239;background:rgba(159,18,57,0.25);color:#fb7185">Dismiss the Presence</button>';
+    h+='</div>';
+  }
+
+  h+='<div class="action-bar">';
+  if(G.discardMode){
+    h+='<div style="flex:1;font-size:0.75rem;color:#fb7185;font-style:italic;display:flex;align-items:center">Select a card to discard</div>';
+    h+='<button class="btn" onclick="endDiscard()">Cancel</button>';
+  } else {
+    h+='<button class="btn btn-primary" onclick="usePower()" '+(G.power<10?'disabled style="opacity:0.3"':'')+'>&#9889; Use Power ('+G.power+'/10)</button>';
+  }
+  h+='</div>';
+
+  h+='<div class="hand-area">';
+  G.hand.forEach(function(card){
+    var rc=rarityColor(card.rarity),rg=rarityGlow(card.rarity);
+    h+='<div class="card-item'+(G.discardMode?' discard-mode':'')+'" style="border-left:3px solid '+rc+'" onclick="playCard(\''+card.uid+'\')">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+    h+='<div class="card-name" style="color:'+rg+'">'+card.name+'</div>';
+    h+='<span style="font-size:0.55rem;color:'+rc+';font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase">'+card.rarity+'</span></div>';
+    h+='<div class="card-effects">';
+    if(card.insight>0)h+='<span class="card-effect" style="color:#fbbf24;border-color:#b45309">+'+card.insight+' Insight</span>';
+    if(card.frenzy>0)h+='<span class="card-effect" style="color:#fca5a5;border-color:#9f1239">+'+card.frenzy+' Frenzy</span>';
+    else if(card.frenzy<0)h+='<span class="card-effect" style="color:#6ee7b7;border-color:#065f46">'+card.frenzy+' Frenzy</span>';
+    if(card.power>0)h+='<span class="card-effect" style="color:#c4b5fd;border-color:#6d28d9">+'+card.power+' Power</span>';
+    h+='</div>';
+    h+='<div class="card-desc">'+card.desc+'</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+
+  if(G.log.length){
+    h+='<div class="turn-log">';
+    G.log.forEach(function(msg){h+='<div class="log-item">'+msg+'</div>';});
+    h+='</div>';
+  }
+
+  h+='<div style="display:flex;gap:0.4rem;margin-top:0.5rem">';
+  h+='<div style="flex:1;border:1px solid var(--border-sub);border-radius:var(--radius);padding:0.4rem;text-align:center;font-size:0.62rem;color:var(--text-faint)">Deck: '+G.deck.length+'</div>';
+  h+='<div style="flex:1;border:1px solid var(--border-sub);border-radius:var(--radius);padding:0.4rem;text-align:center;font-size:0.62rem;color:var(--text-faint)">Discard: '+G.discard.length+'</div>';
+  h+='<button class="btn" style="flex:1;padding:0.35rem 0.5rem;font-size:0.55rem" onclick="G=newGame();render()">New Game</button>';
+  h+='</div>';
+
+  return h;
+}
+
+function renderGameOver(){
+  return '<div class="game-over-box">'+
+    '<p class="eyebrow" style="color:#fb7185">Frenzy: 100</p>'+
+    '<div style="font-family:var(--font-display);font-size:1.5rem;color:#fb7185;margin:0.4rem 0;text-shadow:0 0 20px rgba(159,18,57,0.5)">Lost to the Blood</div>'+
+    '<p style="font-size:0.82rem;color:var(--text-mid);font-style:italic;line-height:1.7;margin-bottom:1rem">The Frenzy took you. You became what you hunted. Insight reached: '+G.insight+'</p>'+
+    '<div style="display:flex;gap:0.5rem">'+
+    '<button class="btn btn-primary" style="flex:1;padding:0.7rem;border-color:#9f1239" onclick="G=newGame();screen=\'game\';render()">Hunt Again</button>'+
+    '<button class="btn" style="flex:1;padding:0.7rem" onclick="screen=\'menu\';G=newGame();render()">Menu</button>'+
+    '</div></div>';
+}
+
+function renderWin(){
+  return '<div class="win-box">'+
+    '<p class="eyebrow" style="color:#34d399">30 Insight</p>'+
+    '<div style="font-family:var(--font-display);font-size:1.5rem;color:#34d399;margin:0.4rem 0;text-shadow:0 0 20px rgba(6,95,70,0.5)">Augur of Ebrietas</div>'+
+    '<p style="font-size:0.82rem;color:var(--text-mid);font-style:italic;line-height:1.7;margin-bottom:1rem">You gathered the truth and kept your mind. Frenzy when complete: '+G.frenzy+'</p>'+
+    '<div style="display:flex;gap:0.5rem">'+
+    '<button class="btn btn-primary" style="flex:1;padding:0.7rem" onclick="G=newGame();screen=\'game\';render()">Hunt Again</button>'+
+    '<button class="btn" style="flex:1;padding:0.7rem" onclick="screen=\'menu\';G=newGame();render()">Menu</button>'+
+    '</div></div>';
+}
+
+var tt=document.getElementById('themeToggle');
+var dark=localStorage.getItem('bb-theme')!=='light';
+if(!dark){document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';}
+tt.addEventListener('click',function(){
+  dark=!dark;
+  if(dark){document.documentElement.removeAttribute('data-theme');tt.textContent='\u2600';localStorage.setItem('bb-theme','dark');}
+  else{document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';localStorage.setItem('bb-theme','light');}
+});
+render();
+</script>
+</body>
+</html>

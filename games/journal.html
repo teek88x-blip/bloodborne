@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hunter's Journal — Bloodborne</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.adventure-wrap{max-width:620px;margin:0 auto;padding:1.25rem 1rem}
+.scene-box{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius);padding:1.25rem 1.1rem;margin-bottom:0.85rem}
+.scene-title{font-family:var(--font-display);font-size:0.78rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:0.6rem}
+.scene-text{font-size:0.88rem;line-height:1.8;color:var(--text-mid);font-style:italic;white-space:pre-line}
+.choice-btn{width:100%;text-align:left;padding:0.75rem 0.95rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--text-mid);font-size:0.82rem;cursor:pointer;font-family:var(--font-body);line-height:1.5;margin-bottom:0.5rem;transition:border-color 0.15s,background 0.15s;display:flex;align-items:center;gap:0.6rem}
+.choice-btn:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--text)}
+.choice-prefix{font-family:var(--font-display);font-size:0.7rem;color:var(--accent);flex-shrink:0}
+.history-bar{border:1px solid var(--border-sub);background:rgba(12,10,9,0.4);border-radius:var(--radius);padding:0.55rem 0.75rem;margin-bottom:0.85rem;font-size:0.65rem;color:var(--text-faint);font-family:var(--font-display);letter-spacing:0.08em;display:flex;gap:0.5rem;flex-wrap:wrap}
+.history-step{color:var(--text-faint)}
+.history-step::after{content:" ›";color:var(--text-faint)}
+.insight-display{position:fixed;top:57px;right:0.75rem;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.3rem 0.6rem;font-size:0.62rem;font-family:var(--font-display);letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-s)}
+.ending-box{border:2px solid;border-radius:var(--radius);padding:1.5rem;text-align:center}
+.ending-title{font-family:var(--font-display);font-size:1.4rem;margin-bottom:0.75rem}
+.ending-text{font-size:0.88rem;line-height:1.8;color:var(--text-mid);font-style:italic;margin-bottom:1.2rem}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <a href="../index.html" style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);text-decoration:none">&larr; Hub</a>
+    <h1 style="font-size:1.2rem;margin-top:0.1rem">Hunter's Journal</h1>
+  </div>
+  <button class="btn btn-icon" id="themeToggle">&#9728;</button>
+</header>
+<div class="insight-display" id="insightDisplay">0 Insight</div>
+<div class="adventure-wrap" id="app"></div>
+<footer class="site-footer">Fear the Old Blood</footer>
+
+<script>
+var SCENES = {
+  start: {
+    loc: "The Waking — Yharnam Gates",
+    text: "You wake on a blood-soaked table. The contract is signed. Yharnam's blood is in your veins now, and the Hunt has begun.\n\nThe city groans around you. Something howls far below. Through the gate you can see the amber fog that always precedes the Beast Plague.\n\nYou are a Hunter. The night is long. What will you do first?",
+    choices: [
+      {label: "Descend toward the howling. Find the source.", next: "beast_hunt", insight: 1},
+      {label: "Follow the lantern. Seek the Workshop first.", next: "workshop", insight: 0},
+      {label: "Watch and listen before moving. Something feels wrong.", next: "observe", insight: 2}
+    ]
+  },
+  workshop: {
+    loc: "Oedon Workshop — Hunter's Workshop",
+    text: "The Workshop smells of oil and old blood. Weapons line the walls — crude, brutal, and well-used.\n\nAn old man sits by the fire. Gehrman, they called him. He does not look up when you enter.\n\n'You've made your contract,' he says. 'The Doll will help you. Go. Hunt. That is all there is.'\n\nHis eyes, when they finally meet yours, hold something deep and sorrowful.",
+    choices: [
+      {label: "Ask Gehrman about the Hunt. Press for answers.", next: "gehrman_press", insight: 2},
+      {label: "Take the weapon and go. Words are for after.", next: "armed_descent", insight: 0},
+      {label: "Speak to the Doll. She stands apart, strangely still.", next: "doll_talk", insight: 3}
+    ]
+  },
+  observe: {
+    loc: "Yharnam Gates — Shadows",
+    text: "You wait, and you watch.\n\nA man stumbles past carrying a lantern. Behind him, something vast moves in the dark — and stops. It is watching the man, but it has also noticed you.\n\nThe massive thing is not hostile. Not yet. It stands still, then slowly turns away.\n\nYou've gained something from this. Not safety — just knowledge. Which is Yharnam's most dangerous currency.",
+    choices: [
+      {label: "Follow the man with the lantern.", next: "lamp_man", insight: 0},
+      {label: "Shadow the vast creature. You need to know what it is.", next: "amygdala_trace", insight: 4},
+      {label: "Descend your own path, alone.", next: "beast_hunt", insight: 1}
+    ]
+  },
+  beast_hunt: {
+    loc: "Central Yharnam — The Descent",
+    text: "The streets are not empty.\n\nYharnam's citizens have barricaded their doors and placed torches at windows. Good. The ones outside are beyond reasoning with. They come with fire and clubs and an animal certainty.\n\nYou fight through them — or around them. Somewhere below, a massive shape is silhouetted against the moon.\n\nYou realise: you are not hunting. You are being led.",
+    choices: [
+      {label: "Press forward regardless. The Hunt demands it.", next: "gascoigne_approach", insight: 0},
+      {label: "Retreat and find another path. You were right to be wary.", next: "workshop", insight: 1},
+      {label: "Shout into the dark. If something leads you, let it answer.", next: "crow_encounter", insight: 2}
+    ]
+  },
+  gehrman_press: {
+    loc: "Oedon Workshop",
+    text: "'What do you need to know?' Gehrman's voice is gentle, but something in it does not invite more questions.\n\n'The blood changes people. Yes. That's what you'll face out there. Hunters go mad. Beasts spread. It's the nature of the old blood.'\n\nHe pauses, and in the silence you hear it: the sound of the Dream around you is wrong. It is too quiet. There are no crickets, no wind. Only the fire.\n\n'Are we truly here?' you ask.\n\nGehrman smiles then, sadly. 'That's enough insight for one night. Go. Hunt.'",
+    choices: [
+      {label: "Accept his answer. Go and hunt.", next: "armed_descent", insight: 0},
+      {label: "Refuse to let it go. Ask again.", next: "dream_truth", insight: 3}
+    ]
+  },
+  doll_talk: {
+    loc: "Oedon Workshop — Garden",
+    text: "The Doll stands in the garden, among flowers that do not move even when the wind does.\n\nShe turns to you. Her eyes are warm. Impossibly warm for something that is not — has never been — alive.\n\n'Good hunter,' she says. 'I will channel the echoes for you. Whenever you return, come to me.'\n\nYou want to ask who made her. Why she's here. Why her voice carries grief and warmth in equal measure. But something in you already understands that knowing the answer would cost more than you can currently afford.",
+    choices: [
+      {label: "Ask anyway. You need to understand this place.", next: "dream_truth", insight: 4},
+      {label: "Thank her and leave. Some things are better not known.", next: "armed_descent", insight: 0}
+    ]
+  },
+  dream_truth: {
+    loc: "Hunter's Dream — The Garden",
+    text: "The Dream is not a safe place.\n\nYou understand this now with a clarity that arrives slowly, then all at once. The Workshop is too still. The sky is wrong. Gehrman's chair never moves and yet the grass around it is worn thin in a circle, as if he has paced the same steps ten thousand times.\n\nYou are not resting here. You are trapped here.\n\nGehrman watches you from the window. He says nothing. He has said nothing a thousand times before.",
+    choices: [
+      {label: "Confront Gehrman directly. Make him explain.", next: "gehrman_confront", insight: 2},
+      {label: "File it away. Use the Dream. Don't trust it.", next: "armed_descent", insight: 1}
+    ]
+  },
+  lamp_man: {
+    loc: "Central Yharnam — Upper Streets",
+    text: "Gilbert, he says his name is. He came from outside Yharnam — like you — for the blood cure. He's been inside long enough to watch the night fall many times.\n\n'The beasts aren't all beyond saving,' he says through his window, voice rough with illness. 'Some of them were people I knew.'\n\nHe gives you directions. The Cathedral Ward. The Healing Church. 'If answers exist, they're there.'\n\nYou notice he does not say if the answers are good.",
+    choices: [
+      {label: "Head toward Cathedral Ward. Follow his directions.", next: "cathedral_approach", insight: 0},
+      {label: "Ask about the worst thing he's seen since the night began.", next: "gilbert_truth", insight: 2}
+    ]
+  },
+  amygdala_trace: {
+    loc: "Yharnam Outskirts — The Shadow",
+    text: "You follow the vast shape.\n\nIt does not walk so much as shift — as if it has decided to be in another place and the universe simply agrees. Its four long arms trail behind it like thoughts half-remembered.\n\nThen it pauses, and looks directly at you.\n\nNot with hostility. With recognition.\n\nYou understand, then, that this creature has watched every Hunter that came before you. And remembered every one.",
+    choices: [
+      {label: "Hold its gaze. Don't look away.", next: "insight_breach", insight: 5},
+      {label: "Back away slowly. This is beyond you tonight.", next: "beast_hunt", insight: 2}
+    ]
+  },
+  armed_descent: {
+    loc: "Central Yharnam — The Streets",
+    text: "You descend.\n\nThe streets of Yharnam are stone and amber lamplight and the sound of things that used to be people. You fight your way through the upper district, reading the architecture for shortcuts, learning the city's bones.\n\nBy the time you reach the river bridge, you are different than you were. Hunting changes people. Maybe that's the point.\n\nAhead: Father Gascoigne's grave. A Hunter who became a beast. The first real test.",
+    choices: [
+      {label: "Face Gascoigne. He was a Hunter once. You'll be fast.", next: "gascoigne_fight", insight: 0},
+      {label: "Search the graveyard first. Something here is important.", next: "gascoigne_approach", insight: 1}
+    ]
+  },
+  gascoigne_approach: {
+    loc: "Oedon Tomb — The Graveyard",
+    text: "Gascoigne is enormous in death — even before the change.\n\nThe gravestone he kneels before belongs to his wife. You find her music box in a woman's pocket — given by their daughter, who is still alive, still waiting.\n\nYou understand now why people go mad in Yharnam.\n\nNot from ignorance. From knowing too much and having no way to put it down.",
+    choices: [
+      {label: "Use the music box. Give him a moment of himself back.", next: "gascoigne_fight", insight: 1},
+      {label: "Fight him outright. Mercy is not yours to give.", next: "gascoigne_fight", insight: 0}
+    ]
+  },
+  crow_encounter: {
+    loc: "Cathedral Ward — Rooftops",
+    text: "A woman in crow-feather armour steps from the shadow of a gargoyle.\n\n'You called into the dark,' she says. 'That's either bravery or stupidity. In Yharnam, they're the same thing.'\n\nEileen the Crow. Hunter of Hunters. She has come to kill someone, she says, though she won't say who. Not yet.\n\n'Some Hunters go mad,' she says. 'When they do, someone has to end it. That's the job.'\n\nShe walks away along the rooftop and is gone.",
+    choices: [
+      {label: "Follow her. You want to know who she's hunting.", next: "cathedral_approach", insight: 2},
+      {label: "Let her go. You have your own hunt.", next: "gascoigne_fight", insight: 0}
+    ]
+  },
+  gehrman_confront: {
+    loc: "Hunter's Dream — Gehrman's Chair",
+    text: "Gehrman looks at you for a long time before he speaks.\n\n'I've had this conversation before,' he says. 'With every Hunter who found themselves thinking too clearly.'\n\nHe does not deny it. He does not explain. He only asks: 'Does it matter? You have a hunt. That is enough. That has always been enough.'\n\nBehind him, the flowers are moving — but there is still no wind.",
+    choices: [
+      {label: "Press: 'Tell me how to leave.'", next: "ending_refuse", insight: 3},
+      {label: "Accept it. The Hunt is what you have.", next: "armed_descent", insight: 0}
+    ]
+  },
+  gilbert_truth: {
+    loc: "Central Yharnam — Window",
+    text: "'The worst thing?' Gilbert is quiet for a moment.\n\n'It's not the beasts. It's that I recognise some of them. The ones who got the blood too early, or too much, or whose faith just — broke.' He coughs. 'You don't stop being a person just because you've become a monster. That's the worst thing I know.'\n\nHe slides something under the door. A flame weapon, crude but functional.\n\n'Come back if you can,' he says.",
+    choices: [
+      {label: "Head into Yharnam with his weapon. His words with you.", next: "armed_descent", insight: 1},
+      {label: "Ask if he's afraid of becoming one.", next: "gilbert_end", insight: 2}
+    ]
+  },
+  gilbert_end: {
+    loc: "Central Yharnam — Window",
+    text: "Gilbert is quiet for a long time.\n\n'Every day,' he says finally. 'But being afraid of the thing you might become is how you stay being the thing you are.'\n\nHe coughs again, wetly, and doesn't say more.\n\nYou leave with his weapon and his answer, both heavy.",
+    choices: [
+      {label: "Continue the hunt.", next: "armed_descent", insight: 1}
+    ]
+  },
+  cathedral_approach: {
+    loc: "Cathedral Ward — Grand Plaza",
+    text: "The Cathedral Ward is Yharnam's face of faith: huge, ornate, and built to inspire exactly the kind of awe that discourages questions.\n\nYou find Alfred, a Hunter of the Executioners, searching the exterior. Warm, earnest, and zealous in the way that makes you wonder if he's ever doubted anything in his life.\n\n'The Vilebloods,' he says. 'Corrupt blood. Enemies of the Church. We will root them out.'\n\nHis conviction is, in its way, more frightening than anything you've fought.",
+    choices: [
+      {label: "Investigate deeper in. The Cathedral holds secrets.", next: "church_secret", insight: 2},
+      {label: "Follow Alfred's lead. He knows this city.", next: "armed_descent", insight: 0}
+    ]
+  },
+  church_secret: {
+    loc: "Upper Cathedral Ward — Hidden Chamber",
+    text: "The Church has hidden something.\n\nBehind the altar, past the barred doors, down the stairs no worshipper was ever meant to find: a chamber.\n\nAt its heart, something that cannot be described in terms your mind fully accepts. Vast. Patient. Left behind. The Church calls it Ebrietas, Daughter of the Cosmos. It does not call itself anything.\n\nIt turns, slowly, and looks at you.\n\nYou understand something in that moment that you will spend the rest of the night trying to put into words.",
+    choices: [
+      {label: "Stay and observe. This changes everything.", next: "insight_breach", insight: 5},
+      {label: "Leave before it reacts. Some doors shouldn't be opened.", next: "armed_descent", insight: 2}
+    ]
+  },
+  insight_breach: {
+    loc: "The Edge — Reality's Seam",
+    text: "You have seen too much.\n\nNot in the way that drives people mad — though that comes later — but in the way that irreversibly changes the shape of what you consider possible.\n\nThe city looks different now. Yharnam's streets and its secrets and its beasts and its beautiful terrible architecture — all of it is scaffolding around something else. Something that was always there.\n\nYou can't unknow this.\n\nBut you can decide what to do with it.",
+    choices: [
+      {label: "Use it as a weapon. Knowledge for the hunt.", next: "gascoigne_fight", insight: 0},
+      {label: "Follow the thread further. Let it take you to the source.", next: "ending_transcend", insight: 6}
+    ]
+  },
+  gascoigne_fight: {
+    loc: "Oedon Tomb — The Fight",
+    text: "It is not clean.\n\nGascoigne — what Gascoigne was — fights you with Hunter instincts and beast rage in equal measure. His music box slows him, briefly, but the music only works once.\n\nAt the end, he is not quite a person.\n\nBut for a moment, in the stillness after, you can see the father he was.\n\nYou take nothing from this except the understanding that the Hunt has a cost — and that cost is paid in people.",
+    choices: [
+      {label: "Continue. Find the Cathedral Ward. Follow this to its end.", next: "cathedral_approach", insight: 1},
+      {label: "Return to the Dream. You need to understand what you're fighting for.", next: "dream_truth", insight: 2}
+    ]
+  },
+  ending_refuse: {
+    loc: "Hunter's Dream — The Final Morning",
+    text: "Gehrman asks you to lay down your life, as hunters before you have, and be freed from the Dream.\n\nYou refuse.\n\nThe fight that follows is the most painful thing in Yharnam — not because Gehrman is cruel, but because he is not. He is simply a man who has done this too many times, trying to do it one more time, and failing.\n\nThe Moon Presence descends.\n\nYou wake Gehrman from his Dream. He is old and confused and finally, mercifully free.\n\nAnd you take his chair.\n\nThe new Hunter's Dream begins.",
+    choices: [
+      {label: "Play again — try another path.", next: "start", insight: 0}
+    ],
+    ending: {title:"Yharnam Sunrise",color:"#b45309",text:"You defied Gehrman and inherited his dream. The cycle continues — but with a new keeper. The Hunt never ends. Only its masters change."}
+  },
+  ending_transcend: {
+    loc: "Beyond — The Final Insight",
+    text: "You consumed the cords. You carried the truth all the way to the end.\n\nWhen the Moon Presence descends, it finds you changed. Not in the way it expected.\n\nThe fight is short. You are not a Hunter anymore.\n\nYou are something else. Something vast. Something that the next Hunter, when they arrive in Yharnam, will encounter in the dark — and wonder what it was.\n\nThe Doll cradles something small and strange in the morning light.",
+    choices: [
+      {label: "Play again — try another path.", next: "start", insight: 0}
+    ],
+    ending: {title:"Childhood's Beginning",color:"#7c3aed",text:"You consumed the truth and transcended humanity. The Great Ones call this an ascension. What it costs is everything you were. What it gives is beyond description."}
+  }
+};
+
+var curScene='start',totalInsight=0,history=[];
+
+function goTo(sceneId, insightGain){
+  history.push(SCENES[curScene].loc);
+  if(history.length>5)history.shift();
+  totalInsight+=insightGain||0;
+  curScene=sceneId;
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function render(){
+  var scene=SCENES[curScene];
+  var app=document.getElementById('app');
+  document.getElementById('insightDisplay').textContent=totalInsight+' Insight';
+  var h='';
+  if(history.length){
+    h+='<div class="history-bar">';
+    history.forEach(function(loc){h+='<span class="history-step">'+loc+'</span>';});
+    h+='</div>';
+  }
+  if(scene.ending){
+    h+='<div class="ending-box" style="border-color:'+scene.ending.color+';box-shadow:0 0 30px '+scene.ending.color+'30">';
+    h+='<p class="eyebrow" style="color:'+scene.ending.color+'">Ending</p>';
+    h+='<div class="ending-title" style="color:'+scene.ending.color+'">'+scene.ending.title+'</div>';
+    h+='<p class="ending-text">'+scene.ending.text+'</p>';
+    h+='<p style="font-size:0.75rem;color:var(--text-faint);margin-bottom:1rem">Insight Accumulated: '+totalInsight+'</p>';
+    h+='<button class="btn btn-primary" style="width:100%;padding:0.75rem" onclick="resetGame()">Begin Again</button>';
+    h+='</div>';
+  } else {
+    h+='<div class="scene-box">';
+    h+='<div class="scene-title">'+scene.loc+'</div>';
+    h+='<div class="scene-text">'+scene.text+'</div>';
+    h+='</div>';
+    var nums=['>','>>','>>>'];
+    scene.choices.forEach(function(c,i){
+      h+='<button class="choice-btn" onclick="goTo(\''+c.next+'\','+(c.insight||0)+')"><span class="choice-prefix">'+nums[i]+'</span>'+c.label+'</button>';
+    });
+    h+='<div style="margin-top:0.5rem;text-align:center;font-size:0.65rem;color:var(--text-faint)">Insight: '+totalInsight+'</div>';
+  }
+  app.innerHTML=h;
+}
+
+function resetGame(){curScene='start';totalInsight=0;history=[];render();}
+
+var tt=document.getElementById('themeToggle');
+var dark=localStorage.getItem('bb-theme')!=='light';
+if(!dark){document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';}
+tt.addEventListener('click',function(){
+  dark=!dark;
+  if(dark){document.documentElement.removeAttribute('data-theme');tt.textContent='\u2600';localStorage.setItem('bb-theme','dark');}
+  else{document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';localStorage.setItem('bb-theme','light');}
+});
+
+render();
+</script>
+</body>
+</html>

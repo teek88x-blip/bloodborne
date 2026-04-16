@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connection Map — Bloodborne</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+body{overflow:hidden}
+.map-header{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:0.65rem 1rem;background:rgba(12,10,9,0.92);border-bottom:1px solid var(--border);backdrop-filter:blur(8px)}
+.map-controls{display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap}
+#mapCanvas{position:fixed;top:0;left:0;cursor:grab;touch-action:none}
+#mapCanvas.dragging{cursor:grabbing}
+.filter-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;gap:0.35rem;padding:0.5rem 0.75rem;background:rgba(12,10,9,0.92);border-top:1px solid var(--border);overflow-x:auto;scrollbar-width:none;backdrop-filter:blur(8px)}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-btn{font-family:var(--font-display);font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.22rem 0.55rem;border-radius:9999px;border:1px solid;background:transparent;cursor:pointer;white-space:nowrap;transition:all 0.15s}
+.detail-panel{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(10,8,7,0.97);border-top:1px solid var(--border);padding:0.85rem 1rem;transform:translateY(100%);transition:transform 0.25s ease;max-height:50vh;overflow-y:auto;backdrop-filter:blur(12px)}
+.detail-panel.visible{transform:translateY(0)}
+.detail-panel-title{font-family:var(--font-display);font-size:1rem;font-weight:600;margin-bottom:0.1rem}
+.detail-panel-faction{font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);margin-bottom:0.5rem}
+.detail-panel-desc{font-size:0.82rem;color:var(--text-mid);line-height:1.6;margin-bottom:0.65rem}
+.connections-title{font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-faint);font-family:var(--font-display);margin-bottom:0.4rem}
+.conn-chips{display:flex;flex-wrap:wrap;gap:0.3rem}
+.conn-chip{font-size:0.65rem;padding:0.2rem 0.55rem;border-radius:3px;border:1px solid;cursor:pointer;transition:opacity 0.15s;font-family:var(--font-body)}
+.conn-chip:hover{opacity:0.75}
+.close-btn{position:absolute;top:0.7rem;right:0.85rem;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:1rem;line-height:1}
+.instructions{position:fixed;bottom:3.5rem;left:50%;transform:translateX(-50%);font-size:0.58rem;letter-spacing:0.15em;color:var(--text-faint);font-family:var(--font-display);text-transform:uppercase;pointer-events:none;white-space:nowrap;transition:opacity 0.3s}
+.legend-panel{position:fixed;top:4.5rem;right:0.75rem;z-index:150;background:rgba(10,8,7,0.96);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;min-width:170px;display:none}
+.legend-panel.visible{display:block}
+.legend-title{font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);font-family:var(--font-display);margin-bottom:0.5rem}
+.legend-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem}
+.legend-line{width:24px;height:0;border-bottom:1.5px solid}
+.legend-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid;flex-shrink:0}
+.legend-label{font-size:0.68rem;color:var(--text-mid)}
+</style>
+</head>
+<body>
+
+<header class="map-header">
+  <div>
+    <a href="index.html" style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);text-decoration:none">&larr; Hub</a>
+    <span style="font-family:var(--font-display);font-size:1.1rem;color:var(--accent-s);margin-left:0.75rem;text-shadow:0 0 20px rgba(200,134,10,0.3)">Connection Map</span>
+  </div>
+  <div class="map-controls">
+    <button class="btn" onclick="resetView()">Reset</button>
+    <button class="btn" id="legendBtn" onclick="toggleLegend()">Legend</button>
+    <button class="btn btn-icon" id="themeToggle">&#9728;</button>
+  </div>
+</header>
+
+<canvas id="mapCanvas"></canvas>
+
+<div class="legend-panel" id="legendPanel">
+  <div class="legend-title">Edge Types</div>
+  <div id="legendEdges"></div>
+  <div class="legend-title" style="margin-top:0.6rem">Factions</div>
+  <div id="legendFactions"></div>
+</div>
+
+<div class="filter-bar" id="filterBar">
+  <button class="filter-btn" data-faction="all" style="border-color:var(--text-faint);color:var(--text-faint)" onclick="setFilter('all')">All</button>
+</div>
+
+<p class="instructions" id="instructions">Tap a node &nbsp;&middot;&nbsp; Drag to pan &nbsp;&middot;&nbsp; Pinch or scroll to zoom</p>
+
+<div class="detail-panel" id="detailPanel">
+  <button class="close-btn" onclick="closeDetail()">&#10005;</button>
+  <div class="detail-panel-title" id="dpTitle"></div>
+  <div class="detail-panel-faction" id="dpFaction"></div>
+  <div class="detail-panel-desc" id="dpDesc"></div>
+  <div class="connections-title">Connections</div>
+  <div class="conn-chips" id="dpChips"></div>
+</div>
+
+<script>
+var FACTIONS={
+  hunters:{label:"Hunters",color:"#b45309",glow:"#f59e0b"},
+  church:{label:"Healing Church",color:"#0f766e",glow:"#2dd4bf"},
+  executors:{label:"Executioners",color:"#92400e",glow:"#d97706"},
+  vilebloods:{label:"Vilebloods",color:"#9f1239",glow:"#fb7185"},
+  byrgen:{label:"Byrgenwerth",color:"#1d4ed8",glow:"#60a5fa"},
+  great:{label:"Great Ones",color:"#6d28d9",glow:"#a78bfa"},
+  dream:{label:"Hunter's Dream",color:"#374151",glow:"#9ca3af"},
+  civilian:{label:"Civilian",color:"#44403c",glow:"#a8a29e"},
+  league:{label:"The League",color:"#065f46",glow:"#34d399"}
+};
+var EDGE_TYPES={
+  control:{color:"#9f1239",dash:false,label:"Controls"},
+  created:{color:"#7c3aed",dash:true,label:"Created"},
+  ally:{color:"#065f46",dash:false,label:"Allied"},
+  enemy:{color:"#b91c1c",dash:false,label:"Hostile"},
+  service:{color:"#0f766e",dash:true,label:"Serves"},
+  mentor:{color:"#b45309",dash:true,label:"Mentor"},
+  research:{color:"#1d4ed8",dash:true,label:"Studied"},
+  lore:{color:"#57534e",dash:true,label:"Lore link"}
+};
+var NODES=[
+  {id:"moon",label:"Moon Presence",f:"great",x:520,y:80,desc:"The entity that traps Gehrman in the Dream. Possibly the source of the Hunter's power. Its motives are unknowable."},
+  {id:"rom",label:"Rom",f:"great",x:680,y:190,desc:"The Vacuous Spider. Maintains the veil that hides the truth of the Blood Moon from the waking world."},
+  {id:"ebrietas",label:"Ebrietas",f:"great",x:790,y:320,desc:"Daughter of the Cosmos. Left behind by the Great Ones; the Healing Church hid and worshipped her in secret."},
+  {id:"amygdala",label:"Amygdala",f:"great",x:640,y:360,desc:"A Great One lurking in plain sight across Yharnam. Only those with sufficient Insight can perceive it."},
+  {id:"mergo",label:"Mergo",f:"great",x:580,y:250,desc:"An infant Great One whose crying echoes through the Nightmare of Mensis. Silencing it ends the Hunt."},
+  {id:"kos",label:"Kos",f:"great",x:850,y:170,desc:"A Great One found dead in the Fishing Hamlet. Her orphan carries her grief and her legacy."},
+  {id:"orphan",label:"Orphan of Kos",f:"great",x:860,y:75,desc:"Child of the Great One Kos. Born from her washed-up corpse. Its grief and rage shape the Fishing Hamlet."},
+  {id:"dream",label:"Hunter's Dream",f:"dream",x:520,y:195,desc:"The liminal space between life and death where Hunters revive. Created by the Moon Presence's pact with Gehrman."},
+  {id:"gehrman",label:"Gehrman",f:"hunters",x:400,y:275,desc:"The First Hunter. Trapped in the Dream as its caretaker. Melancholy, paternal, and hiding something enormous."},
+  {id:"doll",label:"The Doll",f:"dream",x:620,y:275,desc:"Created by Gehrman. Levels the Hunter by channelling the echoes of the dead. Warm, gentle, unknowably strange."},
+  {id:"hunter",label:"The Hunter",f:"hunters",x:295,y:415,desc:"A stranger who arrived in Yharnam for blood ministration. Now trapped in the Hunt. That is you."},
+  {id:"eileen",label:"Eileen the Crow",f:"hunters",x:155,y:310,desc:"Hunter of Hunters — a covenant dedicated to mercifully killing hunters who have gone mad with bloodlust."},
+  {id:"djura",label:"Djura",f:"hunters",x:135,y:475,desc:"Old Hunter atop a tower in Old Yharnam. Defends the beasts. Believes they are still people. He might not be wrong."},
+  {id:"maria",label:"Lady Maria",f:"hunters",x:760,y:475,desc:"Gehrman's finest student. Haunted by what happened at the Fishing Hamlet. Her guilt defines her arc in the DLC."},
+  {id:"gascoigne",label:"Father Gascoigne",f:"hunters",x:295,y:535,desc:"A hunter who lost himself to the Hunt. His family is in Yharnam. His transformation is one of the game's first warnings."},
+  {id:"simon",label:"Simon the Harrowed",f:"hunters",x:195,y:570,desc:"An Old Hunter who seeks the truth behind the Fishing Hamlet massacre. Hunted by Brador for what he knows."},
+  {id:"church",label:"Healing Church",f:"church",x:565,y:440,desc:"The institution built on blood ministration. Evolved from Byrgenwerth's research. Hides enormous secrets behind its charity."},
+  {id:"laurence",label:"Laurence",f:"church",x:625,y:540,desc:"The First Vicar — the man who founded the Healing Church and split from Master Willem, taking the Old Blood with him."},
+  {id:"amelia",label:"Vicar Amelia",f:"church",x:670,y:455,desc:"Leader of the Healing Church in-game. Prays obsessively even as she transforms into a beast. Her faith is real."},
+  {id:"adella",label:"Sister Adella",f:"church",x:485,y:520,desc:"A Church nurse. Devoted, unstable, and capable of violence if her faith in the blood is threatened."},
+  {id:"iosefka",label:"Iosefka",f:"church",x:375,y:495,desc:"Runs the clinic near the start. Her questline reveals what the Church does with the people it saves."},
+  {id:"brador",label:"Brador",f:"church",x:710,y:555,desc:"The Church's secret assassin. Sent to silence those who learn too much. Wears a beast-skin cloak."},
+  {id:"alfred",label:"Alfred",f:"executors",x:440,y:375,desc:"Hunter of the Executioners — a splinter order dedicated to hunting Vilebloods. Warm, helpful, and a zealot."},
+  {id:"logarius",label:"Logarius",f:"executors",x:480,y:295,desc:"Led the Executioners against Cainhurst. Sacrificed himself to seal Annalise away forever."},
+  {id:"annalise",label:"Annalise",f:"vilebloods",x:655,y:115,desc:"Immortal Queen of Cainhurst. Sealed behind Logarius's corpse. The last Vileblood."},
+  {id:"willem",label:"Master Willem",f:"byrgen",x:795,y:415,desc:"Founder of Byrgenwerth. Sought to become a Great One through eyes. Laurence was his student."},
+  {id:"micolash",label:"Micolash",f:"byrgen",x:835,y:310,desc:"Host of the Nightmare. A Mensis scholar who trapped himself in a dream to meet the Great Ones. He got what he wanted."},
+  {id:"gilbert",label:"Gilbert",f:"civilian",x:155,y:415,desc:"Came to Yharnam for the blood cure. Friendly, helpful, and dying. One of the few voices of warmth in the game."},
+  {id:"arianna",label:"Arianna",f:"civilian",x:360,y:595,desc:"A woman of the night in Cathedral Ward. Sending her to safety matters more than it first appears."},
+  {id:"valtr",label:"Valtr",f:"league",x:215,y:640,desc:"Master of the League. Hunts beasts with cooperators and eats the vermin he finds in their corpses."}
+];
+var EDGES=[
+  {a:"moon",b:"dream",type:"control",label:"created & controls"},
+  {a:"moon",b:"gehrman",type:"control",label:"trapped"},
+  {a:"gehrman",b:"doll",type:"created",label:"created"},
+  {a:"gehrman",b:"dream",type:"service",label:"caretaker of"},
+  {a:"gehrman",b:"maria",type:"mentor",label:"mentor"},
+  {a:"dream",b:"hunter",type:"service",label:"calls to the hunt"},
+  {a:"hunter",b:"gehrman",type:"ally",label:"guided by"},
+  {a:"hunter",b:"eileen",type:"ally",label:"met in Yharnam"},
+  {a:"hunter",b:"gilbert",type:"ally",label:"befriended"},
+  {a:"hunter",b:"gascoigne",type:"enemy",label:"fights"},
+  {a:"eileen",b:"gascoigne",type:"enemy",label:"came to kill"},
+  {a:"gascoigne",b:"church",type:"service",label:"former agent of"},
+  {a:"church",b:"ebrietas",type:"service",label:"hid & worshipped"},
+  {a:"church",b:"amelia",type:"service",label:"led by"},
+  {a:"church",b:"adella",type:"service",label:"employs"},
+  {a:"church",b:"iosefka",type:"service",label:"employs"},
+  {a:"church",b:"brador",type:"service",label:"secret enforcer"},
+  {a:"laurence",b:"church",type:"created",label:"founded"},
+  {a:"laurence",b:"willem",type:"mentor",label:"student of"},
+  {a:"laurence",b:"annalise",type:"ally",label:"gave blood to"},
+  {a:"brador",b:"simon",type:"enemy",label:"hunts"},
+  {a:"alfred",b:"logarius",type:"ally",label:"devout follower of"},
+  {a:"alfred",b:"annalise",type:"enemy",label:"seeks to destroy"},
+  {a:"logarius",b:"annalise",type:"enemy",label:"sealed away"},
+  {a:"logarius",b:"church",type:"service",label:"acted for"},
+  {a:"willem",b:"rom",type:"research",label:"may have created"},
+  {a:"micolash",b:"mergo",type:"research",label:"sought contact with"},
+  {a:"micolash",b:"amygdala",type:"research",label:"prayed to"},
+  {a:"rom",b:"dream",type:"control",label:"veils"},
+  {a:"ebrietas",b:"church",type:"control",label:"empowered"},
+  {a:"kos",b:"orphan",type:"created",label:"mother of"},
+  {a:"maria",b:"kos",type:"enemy",label:"participated in massacre"},
+  {a:"simon",b:"kos",type:"research",label:"investigates fate of"},
+  {a:"mergo",b:"dream",type:"lore",label:"cries within"},
+  {a:"arianna",b:"annalise",type:"lore",label:"blood descends from"},
+  {a:"hunter",b:"arianna",type:"ally",label:"can rescue"},
+  {a:"valtr",b:"hunter",type:"ally",label:"covenant partner"}
+];
+
+// ─── CANVAS SETUP ────────────────────────────────────────────────────────────
+var canvas=document.getElementById('mapCanvas');
+var ctx=canvas.getContext('2d');
+var W,H;
+var pan={x:0,y:0},zoom=0.82;
+var selectedId=null,hoveredId=null,filterFaction='all';
+var dragging=false,dragStart={x:0,y:0},panStart={x:0,y:0};
+var darkMode=localStorage.getItem('bb-theme')!=='light';
+var hitRadius=22;
+
+function resize(){
+  W=canvas.width=window.innerWidth;
+  H=canvas.height=window.innerHeight;
+  draw();
+}
+window.addEventListener('resize',resize);
+
+function resetView(){pan={x:0,y:0};zoom=0.82;draw();}
+
+// ─── THEMING ─────────────────────────────────────────────────────────────────
+var tt=document.getElementById('themeToggle');
+if(!darkMode){document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';}
+tt.addEventListener('click',function(){
+  darkMode=!darkMode;
+  if(darkMode){document.documentElement.removeAttribute('data-theme');tt.textContent='\u2600';localStorage.setItem('bb-theme','dark');}
+  else{document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';localStorage.setItem('bb-theme','light');}
+  draw();
+});
+
+function bgColor(){return darkMode?'#0c0a09':'#f0ebe2';}
+function nodeTextColor(){return darkMode?'#e8e2d9':'#1c1812';}
+
+// ─── WORLD TO SCREEN ─────────────────────────────────────────────────────────
+function toScreen(x,y){return{x:x*zoom+pan.x+W/2-500*zoom,y:y*zoom+pan.y+H/2-380*zoom};}
+function toWorld(sx,sy){return{x:(sx-pan.x-W/2+500*zoom)/zoom,y:(sy-pan.y-H/2+380*zoom)/zoom};}
+
+// ─── DRAW ─────────────────────────────────────────────────────────────────────
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=bgColor();
+  ctx.fillRect(0,0,W,H);
+
+  var focusId=selectedId||hoveredId;
+  var connSet=new Set();
+  if(focusId){
+    EDGES.forEach(function(e){if(e.a===focusId||e.b===focusId){connSet.add(e.a);connSet.add(e.b);}});
+  }
+
+  var visNodes=filterFaction==='all'?NODES:NODES.filter(function(n){return n.f===filterFaction;});
+  var visIds=new Set(visNodes.map(function(n){return n.id;}));
+  var visEdges=EDGES.filter(function(e){return visIds.has(e.a)&&visIds.has(e.b);});
+
+  // Edges
+  visEdges.forEach(function(e){
+    var na=NODES.find(function(n){return n.id===e.a;}),nb=NODES.find(function(n){return n.id===e.b;});
+    if(!na||!nb)return;
+    var sa=toScreen(na.x,na.y),sb=toScreen(nb.x,nb.y);
+    var et=EDGE_TYPES[e.type]||EDGE_TYPES.lore;
+    var isFocus=focusId&&(e.a===focusId||e.b===focusId);
+    var isDimmed=focusId&&!isFocus;
+    ctx.globalAlpha=isDimmed?0.07:isFocus?0.95:0.3;
+    ctx.strokeStyle=et.color;
+    ctx.lineWidth=(isFocus?2:1)*zoom;
+    ctx.setLineDash(et.dash?[6*zoom,4*zoom]:[]);
+    ctx.beginPath();ctx.moveTo(sa.x,sa.y);ctx.lineTo(sb.x,sb.y);ctx.stroke();
+    if(isFocus&&e.label){
+      var mx=(sa.x+sb.x)/2,my=(sa.y+sb.y)/2;
+      ctx.globalAlpha=0.85;
+      ctx.font=Math.max(9,10*zoom)+'px Palatino,serif';
+      ctx.fillStyle=et.color;
+      ctx.textAlign='center';
+      ctx.fillText(e.label,mx,my-4*zoom);
+    }
+    ctx.setLineDash([]);
+  });
+
+  // Nodes
+  visNodes.forEach(function(n){
+    var s=toScreen(n.x,n.y);
+    var fac=FACTIONS[n.f];
+    var isSelected=n.id===selectedId;
+    var isHovered=n.id===hoveredId;
+    var isConn=connSet.has(n.id);
+    var isDimmed=focusId&&!isConn&&n.id!==focusId;
+    var r=(n.id==='moon'||n.id==='dream'?20:14)*zoom;
+    ctx.globalAlpha=isDimmed?0.12:1;
+
+    // Pulse ring
+    if(isSelected||isHovered){
+      ctx.globalAlpha=isDimmed?0:0.3;
+      ctx.beginPath();ctx.arc(s.x,s.y,r+6*zoom,0,Math.PI*2);
+      ctx.strokeStyle=fac.glow;ctx.lineWidth=1.5*zoom;ctx.stroke();
+    }
+
+    // Node circle
+    ctx.globalAlpha=isDimmed?0.12:0.9;
+    ctx.beginPath();ctx.arc(s.x,s.y,r,0,Math.PI*2);
+    ctx.fillStyle=fac.color;ctx.fill();
+    ctx.strokeStyle=isSelected||isHovered?fac.glow:fac.color;
+    ctx.lineWidth=(isSelected?2.5:1.5)*zoom;ctx.stroke();
+
+    // Label
+    ctx.globalAlpha=isDimmed?0.12:1;
+    ctx.font='bold '+Math.max(8,9*zoom)+'px Palatino,serif';
+    ctx.fillStyle=nodeTextColor();
+    ctx.textAlign='center';
+    ctx.fillText(n.label,s.x,s.y+r+Math.max(10,12*zoom));
+  });
+
+  ctx.globalAlpha=1;
+  ctx.setLineDash([]);
+}
+
+// ─── INTERACTION ─────────────────────────────────────────────────────────────
+function nodeAt(sx,sy){
+  var w=toWorld(sx,sy);
+  for(var i=0;i<NODES.length;i++){
+    var n=NODES[i];
+    var dx=n.x-w.x,dy=n.y-w.y;
+    var r=(n.id==='moon'||n.id==='dream'?20:14);
+    if(dx*dx+dy*dy<(r+8)*(r+8))return n;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousedown',function(e){
+  var n=nodeAt(e.clientX,e.clientY);
+  if(n){selectNode(n.id);return;}
+  dragging=true;canvas.classList.add('dragging');
+  dragStart={x:e.clientX,y:e.clientY};panStart={x:pan.x,y:pan.y};
+});
+canvas.addEventListener('mousemove',function(e){
+  if(dragging){pan.x=panStart.x+(e.clientX-dragStart.x);pan.y=panStart.y+(e.clientY-dragStart.y);draw();return;}
+  var n=nodeAt(e.clientX,e.clientY);
+  var newH=n?n.id:null;
+  if(newH!==hoveredId){hoveredId=newH;canvas.style.cursor=n?'pointer':'grab';draw();}
+});
+canvas.addEventListener('mouseup',function(){dragging=false;canvas.classList.remove('dragging');});
+canvas.addEventListener('mouseleave',function(){dragging=false;canvas.classList.remove('dragging');});
+canvas.addEventListener('wheel',function(e){e.preventDefault();var f=e.deltaY<0?1.08:0.93;zoom=Math.min(2.5,Math.max(0.25,zoom*f));draw();},{passive:false});
+
+// Touch
+var touches={};
+canvas.addEventListener('touchstart',function(e){
+  e.preventDefault();
+  if(e.touches.length===1){
+    var t=e.touches[0];
+    var n=nodeAt(t.clientX,t.clientY);
+    if(n){selectNode(n.id);return;}
+    dragging=true;dragStart={x:t.clientX,y:t.clientY};panStart={x:pan.x,y:pan.y};
+    touches.single={x:t.clientX,y:t.clientY};
+  } else if(e.touches.length===2){
+    dragging=false;
+    var dx=e.touches[0].clientX-e.touches[1].clientX;
+    var dy=e.touches[0].clientY-e.touches[1].clientY;
+    touches.pinchDist=Math.sqrt(dx*dx+dy*dy);
+    touches.pinchZoom=zoom;
+  }
+},{passive:false});
+canvas.addEventListener('touchmove',function(e){
+  e.preventDefault();
+  if(e.touches.length===1&&dragging){
+    var t=e.touches[0];
+    pan.x=panStart.x+(t.clientX-dragStart.x);pan.y=panStart.y+(t.clientY-dragStart.y);draw();
+  } else if(e.touches.length===2&&touches.pinchDist){
+    var dx=e.touches[0].clientX-e.touches[1].clientX;
+    var dy=e.touches[0].clientY-e.touches[1].clientY;
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    zoom=Math.min(2.5,Math.max(0.25,touches.pinchZoom*(dist/touches.pinchDist)));draw();
+  }
+},{passive:false});
+canvas.addEventListener('touchend',function(){dragging=false;touches={};});
+
+// ─── DETAIL PANEL ─────────────────────────────────────────────────────────────
+function selectNode(id){
+  selectedId=selectedId===id?null:id;
+  if(selectedId){
+    var n=NODES.find(function(x){return x.id===id;});
+    var fac=FACTIONS[n.f];
+    document.getElementById('dpTitle').textContent=n.label;
+    document.getElementById('dpTitle').style.color=fac.glow;
+    document.getElementById('dpFaction').textContent=fac.label;
+    document.getElementById('dpFaction').style.color=fac.color;
+    document.getElementById('dpDesc').textContent=n.desc;
+    var edges=EDGES.filter(function(e){return e.a===id||e.b===id;});
+    var chips='';
+    edges.forEach(function(e){
+      var oid=e.a===id?e.b:e.a;
+      var on=NODES.find(function(x){return x.id===oid;});
+      if(!on)return;
+      var et=EDGE_TYPES[e.type]||EDGE_TYPES.lore;
+      var arrow=e.a===id?'&rarr;':'&larr;';
+      chips+='<span class="conn-chip" style="color:'+et.color+';border-color:'+et.color+'40;background:'+et.color+'15" onclick="selectNode(\''+oid+'\')">'+arrow+' '+on.label+' <span style="opacity:0.55;font-size:0.58rem">('+e.label+')</span></span>';
+    });
+    document.getElementById('dpChips').innerHTML=chips||'<span style="font-size:0.75rem;color:var(--text-faint)">No direct connections</span>';
+    document.getElementById('detailPanel').classList.add('visible');
+    document.getElementById('instructions').style.opacity='0';
+  } else {
+    closeDetail();
+  }
+  draw();
+}
+
+function closeDetail(){selectedId=null;document.getElementById('detailPanel').classList.remove('visible');document.getElementById('instructions').style.opacity='1';draw();}
+
+// ─── FILTER BAR ───────────────────────────────────────────────────────────────
+var fb=document.getElementById('filterBar');
+Object.entries(FACTIONS).forEach(function(entry){
+  var key=entry[0],fac=entry[1];
+  var btn=document.createElement('button');
+  btn.className='filter-btn';btn.setAttribute('data-faction',key);
+  btn.style.borderColor=fac.color+'80';btn.style.color=fac.color;
+  btn.textContent=fac.label;
+  btn.addEventListener('click',function(){setFilter(key);});
+  fb.appendChild(btn);
+});
+
+function setFilter(fac){
+  filterFaction=fac;
+  document.querySelectorAll('.filter-btn').forEach(function(b){
+    var k=b.getAttribute('data-faction');
+    var f=k==='all'?{color:'var(--text-faint)'}:FACTIONS[k];
+    var isActive=k===fac;
+    b.style.background=isActive?(k==='all'?'rgba(120,112,100,0.25)':FACTIONS[k].color+'25'):'transparent';
+    b.style.color=isActive?(k==='all'?'var(--text)':FACTIONS[k].glow):(k==='all'?'var(--text-faint)':FACTIONS[k].color);
+  });
+  selectedId=null;closeDetail();draw();
+}
+
+// ─── LEGEND ───────────────────────────────────────────────────────────────────
+function toggleLegend(){document.getElementById('legendPanel').classList.toggle('visible');}
+function buildLegend(){
+  var eh='';
+  Object.entries(EDGE_TYPES).forEach(function(e){
+    eh+='<div class="legend-row"><svg width="24" height="8" style="flex-shrink:0"><line x1="0" y1="4" x2="24" y2="4" stroke="'+e[1].color+'" stroke-width="1.5" stroke-dasharray="'+( e[1].dash?'5,3':'none')+'"/></svg><span class="legend-label">'+e[1].label+'</span></div>';
+  });
+  document.getElementById('legendEdges').innerHTML=eh;
+  var fh='';
+  Object.entries(FACTIONS).forEach(function(e){
+    fh+='<div class="legend-row"><div class="legend-dot" style="background:'+e[1].color+';border-color:'+e[1].glow+'"></div><span class="legend-label">'+e[1].label+'</span></div>';
+  });
+  document.getElementById('legendFactions').innerHTML=fh;
+}
+buildLegend();
+
+resize();
+</script>
+</body>
+</html>

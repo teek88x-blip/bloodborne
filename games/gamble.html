@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blood Echo Gamble — Bloodborne</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.gamble-wrap{max-width:500px;margin:0 auto;padding:1.25rem 1rem 3rem}
+.echo-display{font-family:var(--font-display);font-size:2.8rem;font-weight:700;color:var(--accent-s);text-align:center;text-shadow:0 0 40px rgba(200,134,10,0.4);line-height:1;margin:0.25rem 0}
+.echo-label{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-faint);font-family:var(--font-display);text-align:center;margin-bottom:0.1rem}
+.bank-display{font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:#34d399;text-shadow:0 0 20px rgba(52,211,153,0.3)}
+.dice-roll{font-size:3.5rem;text-align:center;line-height:1;margin:0.5rem 0;filter:sepia(0.5)}
+.dice-spin{animation:spin 0.4s ease-out}
+@keyframes spin{0%{transform:rotate(0deg) scale(0.8);opacity:0}50%{transform:rotate(180deg) scale(1.2)}100%{transform:rotate(360deg) scale(1);opacity:1}}
+.result-flash{animation:flash 0.5s ease-out}
+@keyframes flash{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}
+.milestone-row{display:flex;align-items:center;gap:0.6rem;padding:0.35rem 0;border-bottom:1px solid var(--border-sub)}
+.milestone-row:last-child{border-bottom:none}
+.milestone-icon{font-size:1rem;flex-shrink:0}
+.milestone-label{font-size:0.78rem;flex:1}
+.milestone-reward{font-size:0.68rem;color:var(--accent);font-family:var(--font-display)}
+.milestone-check{font-size:0.75rem;color:var(--green-s)}
+.bet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.6rem 0}
+.bet-btn{padding:0.55rem 0.3rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--text-mid);font-size:0.75rem;cursor:pointer;font-family:var(--font-display);letter-spacing:0.05em;transition:all 0.15s;text-align:center}
+.bet-btn.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent-s)}
+.bet-btn:disabled{opacity:0.35;cursor:not-allowed}
+.history-grid{display:flex;gap:3px;flex-wrap:wrap;margin-top:0.35rem}
+.hist-die{width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:3px;border:1px solid;font-size:0.8rem}
+.streak-badge{font-size:0.72rem;padding:2px 8px;border-radius:3px;border:1px solid;font-family:var(--font-display);letter-spacing:0.08em}
+.death-screen{border:2px solid #9f1239;border-radius:var(--radius);padding:1.5rem;text-align:center;background:rgba(159,18,57,0.1)}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <a href="../index.html" style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);text-decoration:none">&larr; Hub</a>
+    <h1 style="font-size:1.2rem;margin-top:0.1rem">Blood Echo Gamble</h1>
+  </div>
+  <button class="btn btn-icon" id="themeToggle">&#9728;</button>
+</header>
+
+<div class="gamble-wrap" id="app"></div>
+<footer class="site-footer">Prey upon the night &nbsp;&middot;&nbsp; Or it preys upon you</footer>
+
+<script>
+var BETS=[50,100,200,500,1000,2000];
+var DICE_FACES=['&#9856;','&#9857;','&#9858;','&#9859;','&#9860;','&#9861;'];
+var MULTIPLIERS=[0,0.5,1,1.5,2,3,5];
+var DIE_COLORS=['#b91c1c','#9f1239','#b45309','#065f46','#1d4ed8','#7c3aed'];
+
+var MILESTONES=[
+  {threshold:1000,label:"First Blood",icon:"&#129405;",reward:"Rookie Hunter",achieved:false},
+  {threshold:5000,label:"Blood Drunk",icon:"&#128200;",reward:"Sanguine Scholar",achieved:false},
+  {threshold:10000,label:"Insight Seeker",icon:"&#128065;",reward:"Choir Initiate",achieved:false},
+  {threshold:25000,label:"Moon Gazer",icon:"&#127754;",reward:"Pthumerian Heir",achieved:false},
+  {threshold:50000,label:"The Hunt Ends",icon:"&#9876;",reward:"First Hunter",achieved:false}
+];
+
+var state={
+  echoes:500,
+  bank:0,
+  bet:100,
+  rolling:false,
+  lastRoll:null,
+  lastResult:null,
+  streak:0,
+  highStreak:0,
+  totalWon:0,
+  totalLost:0,
+  history:[],
+  milestones:MILESTONES.map(function(m){return Object.assign({},m);}),
+  screen:'game',
+  highScore:parseInt(localStorage.getItem('bb-gamble-hs')||'0')
+};
+
+function roll(){
+  if(state.rolling||state.echoes<=0)return;
+  if(state.bet>state.echoes){alert('Not enough Blood Echoes!');return;}
+  state.rolling=true;
+  state.echoes-=state.bet;
+  renderGame();
+  setTimeout(function(){
+    var die=Math.floor(Math.random()*6)+1;
+    var mult=MULTIPLIERS[die];
+    var won=Math.floor(state.bet*mult);
+    state.lastRoll=die;
+    state.lastResult=won-state.bet+(die===1?0:state.bet);
+    state.echoes+=won;
+    if(mult>1){state.streak++;state.highStreak=Math.max(state.highStreak,state.streak);state.totalWon+=won;}
+    else{state.streak=0;state.totalLost+=state.bet;}
+    state.history.unshift(die);
+    if(state.history.length>20)state.history.pop();
+    checkMilestones();
+    state.rolling=false;
+    if(state.echoes<=0&&state.bank===0){state.screen='dead';}
+    renderGame();
+  },350);
+}
+
+function bank(){
+  if(state.bank===0&&state.echoes===0)return;
+  state.bank+=state.echoes;
+  state.echoes=0;
+  if(state.bank>state.highScore){state.highScore=state.bank;localStorage.setItem('bb-gamble-hs',state.highScore);}
+  state.screen='banked';
+  renderGame();
+}
+
+function unbank(){
+  state.echoes+=state.bank;state.bank=0;state.screen='game';renderGame();
+}
+
+function setBet(v){
+  if(v<=state.echoes){state.bet=v;renderGame();}
+}
+
+function checkMilestones(){
+  var total=state.echoes+state.bank;
+  state.milestones.forEach(function(m){if(!m.achieved&&total>=m.threshold)m.achieved=true;});
+}
+
+function resetGame(){
+  state={
+    echoes:500,bank:0,bet:100,rolling:false,lastRoll:null,lastResult:null,
+    streak:0,highStreak:0,totalWon:0,totalLost:0,history:[],
+    milestones:MILESTONES.map(function(m){return Object.assign({},m);}),
+    screen:'game',
+    highScore:parseInt(localStorage.getItem('bb-gamble-hs')||'0')
+  };
+  renderGame();
+}
+
+function render(){document.getElementById('app').innerHTML=renderGame();}
+
+function renderGame(){
+  var h='';
+  if(state.screen==='dead'){
+    h='<div class="death-screen">'+
+      '<div style="font-size:2rem;margin-bottom:0.35rem">&#128128;</div>'+
+      '<p class="eyebrow" style="color:#fb7185">You Died</p>'+
+      '<div style="font-family:var(--font-display);font-size:1.4rem;color:#fb7185;margin:0.3rem 0">All Echoes Lost</div>'+
+      '<p style="font-size:0.8rem;color:var(--text-mid);font-style:italic;line-height:1.7;margin-bottom:1rem">Greed is the nature of the Hunt. The echoes scatter. Best banked: '+state.highScore.toLocaleString()+'</p>'+
+      '<button class="btn btn-primary" style="width:100%;padding:0.75rem;border-color:#9f1239;color:#fb7185" onclick="resetGame()">Rise Again</button>';
+    document.getElementById('app').innerHTML=h;return h;
+  }
+
+  if(state.screen==='banked'){
+    h='<div style="border:2px solid #34d399;border-radius:var(--radius);padding:1.5rem;text-align:center;background:rgba(6,95,70,0.1)">'+
+      '<div style="font-size:2rem;margin-bottom:0.35rem">&#128179;</div>'+
+      '<p class="eyebrow" style="color:#34d399">Banked</p>'+
+      '<div style="font-family:var(--font-display);font-size:2rem;color:#34d399;text-shadow:0 0 20px rgba(52,211,153,0.3);margin:0.3rem 0">'+state.bank.toLocaleString()+'</div>'+
+      '<p style="font-size:0.78rem;color:var(--text-mid);font-style:italic;line-height:1.7;margin-bottom:1rem">Wisely preserved. The echoes rest safe from death. Withdraw to continue gambling.</p>'+
+      '<div style="display:flex;gap:0.5rem">'+
+      '<button class="btn btn-primary" style="flex:1;padding:0.65rem" onclick="unbank()">Withdraw &amp; Continue</button>'+
+      '<button class="btn" style="flex:1;padding:0.65rem" onclick="resetGame()">New Hunt</button>'+
+      '</div></div>';
+    document.getElementById('app').innerHTML=h;return h;
+  }
+
+  // Stats
+  h+='<div style="border:1px solid var(--border);background:var(--surface);border-radius:var(--radius);padding:0.75rem 0.85rem;margin-bottom:0.75rem">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+  h+='<div><div class="echo-label">Blood Echoes</div><div class="echo-display">'+state.echoes.toLocaleString()+'</div></div>';
+  h+='<div style="text-align:right">';
+  h+='<div style="font-size:0.55rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-faint);font-family:var(--font-display)">Banked</div>';
+  h+='<div class="bank-display">'+state.bank.toLocaleString()+'</div>';
+  h+='</div></div>';
+  h+='<div style="display:flex;justify-content:space-between;margin-top:0.4rem">';
+  h+='<span style="font-size:0.62rem;color:var(--text-faint)">Best: '+state.highScore.toLocaleString()+'</span>';
+  if(state.streak>0)h+='<span class="streak-badge" style="color:var(--accent-s);border-color:var(--accent)">&#128293; '+state.streak+' streak</span>';
+  h+='</div></div>';
+
+  // Dice area
+  h+='<div style="border:1px solid var(--border);background:var(--surface);border-radius:var(--radius);padding:1rem;text-align:center;margin-bottom:0.75rem">';
+  if(state.rolling){
+    h+='<div class="dice-roll">&#127922;</div><p style="color:var(--text-dim);font-size:0.75rem;font-style:italic">Rolling...</p>';
+  } else if(state.lastRoll){
+    var die=state.lastRoll;
+    var mult=MULTIPLIERS[die];
+    var netResult=state.lastResult;
+    h+='<div class="dice-roll dice-spin" style="color:'+DIE_COLORS[die-1]+'">'+DICE_FACES[die-1]+'</div>';
+    h+='<div class="result-flash" style="font-family:var(--font-display);font-size:1.1rem;color:'+(netResult>=0?'#34d399':'#fb7185')+';margin-bottom:0.1rem">';
+    h+=(netResult>0?'+':'')+netResult.toLocaleString()+' Echoes</div>';
+    h+='<div style="font-size:0.62rem;color:var(--text-faint)">'+
+      (mult===0?'Lost it all':mult===0.5?'Half returned':mult===1?'Returned':mult===1.5?'1.5x':mult===2?'Double':mult===3?'Triple':'Five times!')+
+    '</div>';
+  } else {
+    h+='<div style="font-size:3rem;opacity:0.2">&#127922;</div><p style="color:var(--text-faint);font-size:0.75rem;font-style:italic">Place your bet below</p>';
+  }
+  h+='</div>';
+
+  // Bet selector
+  h+='<div class="surface-box mb-sm"><p style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);margin-bottom:0.1rem">Wager</p>';
+  h+='<div class="bet-grid">';
+  BETS.forEach(function(v){
+    var dis=v>state.echoes||state.rolling;
+    h+='<button class="bet-btn'+(state.bet===v?' active':'')+'" onclick="setBet('+v+')" '+(dis?'disabled':'')+'>'+v.toLocaleString()+'</button>';
+  });
+  h+='</div></div>';
+
+  // Action buttons
+  h+='<div style="display:flex;gap:0.6rem;margin-bottom:0.85rem">';
+  h+='<button class="btn btn-primary" style="flex:2;padding:0.75rem;font-size:0.75rem" onclick="roll()" '+(state.rolling||state.echoes===0?'disabled style="opacity:0.4"':'')+'>Roll the Dice</button>';
+  h+='<button class="btn" style="flex:1;padding:0.75rem;color:#34d399;border-color:#065f46;background:rgba(6,95,70,0.15)" onclick="bank()" '+(state.echoes===0?'disabled style="opacity:0.4"':'')+'>Bank</button>';
+  h+='</div>';
+
+  // Dice probability legend
+  h+='<div class="surface-box mb-md"><p class="eyebrow" style="margin-bottom:0.45rem">Odds</p>';
+  h+='<div style="display:flex;gap:4px">';
+  var labels=['Miss (x0)','Half (x0.5)','Break even (x1)','Gain (x1.5)','Double (x2)','Triple (x3)'];
+  for(var i=1;i<=6;i++){
+    h+='<div style="flex:1;text-align:center"><div style="font-size:1.1rem;color:'+DIE_COLORS[i-1]+'">'+DICE_FACES[i-1]+'</div><div style="font-size:0.5rem;color:var(--text-faint);margin-top:2px">'+labels[i-1].split(' ')[0]+'</div></div>';
+  }
+  h+='</div></div>';
+
+  // Roll history
+  if(state.history.length){
+    h+='<div class="surface-box mb-md"><p class="eyebrow" style="margin-bottom:0.4rem">Recent Rolls</p>';
+    h+='<div class="history-grid">';
+    state.history.forEach(function(d){
+      var m=MULTIPLIERS[d];
+      var color=m===0?'#9f1239':m<1?'#b45309':m===1?'#4b5563':m===1.5?'#065f46':m===2?'#1d4ed8':'#7c3aed';
+      h+='<div class="hist-die" style="border-color:'+color+'20;background:'+color+'20;color:'+color+'">'+DICE_FACES[d-1]+'</div>';
+    });
+    h+='</div></div>';
+  }
+
+  // Milestones
+  h+='<div class="surface-box"><p class="eyebrow" style="margin-bottom:0.4rem">Milestones</p>';
+  state.milestones.forEach(function(m){
+    var total=state.echoes+state.bank;
+    h+='<div class="milestone-row"><span class="milestone-icon">'+m.icon+'</span>';
+    h+='<div style="flex:1"><div class="milestone-label"'+(!m.achieved?' style="color:var(--text-dim)"':'')+'>'+m.label+'</div>';
+    h+='<div class="milestone-reward" style="color:'+(m.achieved?'var(--accent-s)':'var(--text-faint)')+'">'+m.reward+' &mdash; '+m.threshold.toLocaleString()+'</div></div>';
+    h+=(m.achieved?'<span class="milestone-check">&#10003;</span>':'<div style="font-size:0.62rem;color:var(--text-faint)">'+Math.round(Math.min(100,(total/m.threshold)*100))+'%</div>');
+    h+='</div>';
+  });
+  h+='</div>';
+
+  document.getElementById('app').innerHTML=h;
+  return h;
+}
+
+var tt=document.getElementById('themeToggle');
+var dark=localStorage.getItem('bb-theme')!=='light';
+if(!dark){document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';}
+tt.addEventListener('click',function(){
+  dark=!dark;
+  if(dark){document.documentElement.removeAttribute('data-theme');tt.textContent='\u2600';localStorage.setItem('bb-theme','dark');}
+  else{document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';localStorage.setItem('bb-theme','light');}
+});
+
+renderGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lore Quiz — Bloodborne</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.quiz-wrap{max-width:600px;margin:0 auto;padding:1.25rem 1rem}
+.progress-pips{display:flex;gap:3px;margin-bottom:0.85rem}
+.pip{height:4px;border-radius:2px;flex:1;background:var(--border-sub);transition:background 0.3s}
+.pip.past{background:var(--accent)}
+.pip.current{background:var(--accent-s)}
+.question-box{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius);padding:1.1rem;margin-bottom:0.85rem}
+.question-text{font-size:0.95rem;line-height:1.7;color:var(--text);font-style:italic}
+.option-btn{width:100%;text-align:left;padding:0.7rem 0.9rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--text-mid);font-size:0.82rem;cursor:pointer;font-family:var(--font-body);line-height:1.5;margin-bottom:0.45rem;transition:border-color 0.15s,background 0.15s;display:flex;justify-content:space-between;align-items:center}
+.option-btn:hover:not(:disabled){border-color:var(--accent);background:var(--accent-dim)}
+.option-btn.correct{border-color:#059669;background:rgba(5,100,60,0.2);color:#6ee7b7}
+.option-btn.wrong{border-color:#b91c1c;background:rgba(150,20,20,0.2);color:#fca5a5}
+.option-num{color:var(--text-faint);margin-right:0.5rem;flex-shrink:0}
+.explanation-box{border:1px solid var(--border-sub);border-radius:var(--radius);overflow:hidden;margin-bottom:0.85rem}
+.expl-toggle{width:100%;text-align:left;padding:0.5rem 0.75rem;background:var(--surface);border:none;color:var(--text-dim);font-size:0.65rem;cursor:pointer;font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;display:flex;justify-content:space-between}
+.expl-body{display:none;padding:0.6rem 0.75rem;border-top:1px solid var(--border-sub);font-size:0.8rem;color:var(--text-mid);line-height:1.65;font-style:italic}
+.expl-body.visible{display:block}
+.tier-badge{font-size:0.55rem;padding:2px 7px;border:1px solid;border-radius:2px;font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase}
+.result-rank{font-size:2.8rem;font-weight:bold;line-height:1}
+.result-box{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius);padding:1.5rem 1rem;text-align:center;margin-bottom:1rem}
+.review-item{display:flex;gap:0.5rem;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-sub);align-items:flex-start}
+.review-mark{flex-shrink:0;font-size:0.8rem;margin-top:1px}
+.review-text{font-size:0.73rem;color:var(--text-mid);line-height:1.5}
+.rank-list{border:1px solid var(--border-sub);border-radius:var(--radius);overflow:hidden}
+.rank-row{display:flex;justify-content:space-between;padding:0.22rem 0.75rem;border-bottom:1px solid var(--border-sub);font-size:0.72rem}
+.rank-row:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <a href="../index.html" style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);text-decoration:none">&larr; Hub</a>
+    <h1 style="font-size:1.2rem;margin-top:0.1rem">Lore Quiz</h1>
+  </div>
+  <button class="btn btn-icon" id="themeToggle">&#9728;</button>
+</header>
+<div class="quiz-wrap" id="app"></div>
+<footer class="site-footer">Fear the Old Blood</footer>
+
+<script>
+var QS=[
+  {q:"What is the mysterious substance used in Yharnam's medical treatments?",opts:["Quicksilver","Old Blood","Numbing Mist","Oedon Fluid"],a:1,tier:"Initiate",exp:"Old Blood is the source of Yharnam's medical miracle — and its curse. Pilgrims travel from across the world to receive it."},
+  {q:"What does 'Insight' represent in Bloodborne?",opts:["Beasts slain","Currency for weapons","Cosmic truth witnessed","Times died"],a:2,tier:"Initiate",exp:"Insight tracks how much of the truth you've been exposed to. Higher Insight literally changes what you see and hear in the world."},
+  {q:"Who is the First Hunter, found in the Hunter's Dream?",opts:["Father Gascoigne","Djura","Gehrman","Alfred"],a:2,tier:"Initiate",exp:"Gehrman sits in his wheelchair in the Dream, offering guidance. He has clearly been doing this for a very, very long time."},
+  {q:"What does Father Gascoigne transform into during his boss fight?",opts:["A Kin creature","A Great One","A Beast","A Church Giant"],a:2,tier:"Initiate",exp:"Gascoigne was a hunter who lost himself to the blood. His transformation mid-fight is one of the game's early warnings about what the Hunt costs."},
+  {q:"What institution controls Yharnam's blood ministration?",opts:["The Executioners","Byrgenwerth College","The Healing Church","The League"],a:2,tier:"Initiate",exp:"The Healing Church rose to power on the back of blood ministration. They are simultaneously Yharnam's healers, its priesthood, and its secret-keepers."},
+  {q:"What is the name of the doll in the Hunter's Dream?",opts:["Maria","Adella","The Doll","Viola"],a:2,tier:"Initiate",exp:"The Doll channels the echoes of the dead into your body. She was created by Gehrman, and her origins are as strange as everything else in the Dream."},
+  {q:"Eileen the Crow belongs to which covenant?",opts:["The League","Hunter of Hunters","Cainhurst Vilebloods","The Executioners"],a:1,tier:"Hunter",exp:"The Hunter of Hunters kill hunters who have gone mad with bloodlust — a mercy covenant. Eileen is weary, pragmatic, and one of the most human characters in the game."},
+  {q:"What does defeating Rom, the Vacuous Spider trigger?",opts:["DLC access","The Blood Moon","Gehrman's questline","Dream collapsing"],a:1,tier:"Hunter",exp:"Rom maintained a veil hiding the true state of the world. Her death triggers the Blood Moon — a permanent world-state shift that changes enemies, NPCs, and the sky itself."},
+  {q:"Why was Old Yharnam burned?",opts:["Vilebloods destroyed evidence","Church contained beast plague","Gehrman punished them","Executioners cleansed it"],a:1,tier:"Hunter",exp:"The Healing Church burned Old Yharnam to contain the scourge. Djura stands atop his tower as a one-man protest — guarding the beasts the Church tried to erase."},
+  {q:"Who founded Byrgenwerth?",opts:["Laurence","Micolash","Master Willem","Brador"],a:2,tier:"Hunter",exp:"Master Willem led Byrgenwerth in its pursuit of cosmic knowledge. His student Laurence later broke away to found the Healing Church, taking the Old Blood with him."},
+  {q:"Which boss is imprisoned atop Cainhurst Castle?",opts:["Logarius","Annalise","Shadow of Yharnam","Darkbeast Paarl"],a:1,tier:"Hunter",exp:"Logarius sacrificed himself to seal Annalise away, standing guard as a corpse on the rooftop. He died so no one could free the last Vileblood Queen."},
+  {q:"What are 'Kin' enemies in Bloodborne?",opts:["Fully transformed beasts","Creatures linked to Great Ones","Undead hunters","Church creations"],a:1,tier:"Hunter",exp:"Where Beasts represent descent into animality, Kin represent ascent toward something cosmic and alien. They're associated with the Great Ones and higher knowledge."},
+  {q:"What are the Three Umbilical Cords used for?",opts:["Crafting the best weapon","Consuming them reveals a hidden ending","Tributes to Annalise","They unlock the DLC"],a:1,tier:"Veteran",exp:"Consuming all three One Third of Umbilical Cord items before fighting Gehrman triggers the game's true ending — but what that ending reveals is something to experience."},
+  {q:"What is the significance of Mergo's Wet Nurse's defeat?",opts:["Triggers final phase","Mergo stops crying, ending the hunt","Awakens Moon Presence","Destroys the Dream"],a:1,tier:"Veteran",exp:"Defeating the Wet Nurse silences Mergo's crying, officially ending the hunt. Gehrman tells you so. What happens next depends entirely on what you choose."},
+  {q:"What is the origin of the Old Blood?",opts:["Ancient Pthumerian remains","A Great One beneath Byrgenwerth","Synthesised by Laurence","A fallen star"],a:0,tier:"Veteran",exp:"The Old Blood originates from contact with the Great Ones discovered in Pthumerian ruins. The Pthumerians made contact long before the Healing Church."},
+  {q:"What atrocity connects Lady Maria and Kos?",opts:["Burning of Old Yharnam","Massacre of the Fishing Hamlet","Founding of the Choir","Sealing of Cainhurst"],a:1,tier:"Veteran",exp:"The old hunters — including Maria — slaughtered the Fishing Hamlet's people to plunder their knowledge of the Great Ones. Maria's guilt over this defines her entire arc in the DLC."},
+  {q:"What did Micolash do to himself?",opts:["Transformed into beast willingly","Trapped himself in Nightmare to contact Great Ones","Gehrman's student driven mad","Discovered the Fishing Hamlet"],a:1,tier:"Veteran",exp:"Micolash led the School of Mensis in a ritual that plunged them into the Nightmare. He wanted to speak with the Great Ones directly. He got what he wanted, in a fashion."},
+  {q:"What relationship exists between the Executioners and Vilebloods?",opts:["Church allies","Ancient enemies — Executioners destroy Vilebloods","Rivals competing for blood dregs","Vilebloods created Executioners"],a:1,tier:"Veteran",exp:"The Executioners were formed specifically to hunt and destroy Vilebloods, who the Church deemed corrupt. Alfred's questline explores what this kind of zealotry costs a person."},
+  {q:"What is the Nightmare Frontier?",opts:["Church pocket dimension","Nightmare realm adjacent to Byrgenwerth","Dream realm home to Amygdala","First Pthumerian layer"],a:2,tier:"Veteran",exp:"The Nightmare Frontier is a festering, poison-soaked dream realm where Amygdala lurks. Its existence hints at how permeable the boundary between reality and nightmare truly is."},
+  {q:"Who is Valtr, and what is the League?",opts:["Church scholar seeking Great Ones","Hunter who eats vermin, leads cooperative hunting covenant","Gascoigne's mentor","Cainhurst castle guard"],a:1,tier:"Veteran",exp:"Valtr once ate the flesh of beasts he hunted and found 'vermin' inside. The League hunts cooperatively and collects these vermin. What vermin actually represents is left to the player to decide."}
+];
+
+var TIERS={Initiate:{color:"#b45309",glow:"#fbbf24"},Hunter:{color:"#1d4ed8",glow:"#60a5fa"},Veteran:{color:"#7c3aed",glow:"#c4b5fd"}};
+var RANKS=[["Augur of Ebrietas","You have gazed into the cosmos and the cosmos gazed back.","#7c3aed",90],["Choir Scholar","Your knowledge of the Old Blood runs deep.","#0f766e",70],["Church Hunter","A capable Hunter. The truth is within reach.","#b45309",50],["Yharnam Wanderer","Lost in the streets. The Hunt has only just begun.","#78716c",30],["Plain Doll","Ah, good hunter. Perhaps next time.","#57534e",0]];
+
+var screen='menu',questions=[],qIdx=0,score=0,chosen=null,answers=[],showExpl=false,filterTier='All';
+
+function shuffle(a){var b=[].concat(a);for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
+
+function startQuiz(){
+  var pool=filterTier==='All'?QS:QS.filter(function(q){return q.tier===filterTier;});
+  questions=shuffle(pool).slice(0,Math.min(10,pool.length));
+  qIdx=0;score=0;chosen=null;answers=[];showExpl=false;screen='quiz';render();
+}
+
+function pickAnswer(idx){
+  if(chosen!==null)return;
+  chosen=idx;
+  if(idx===questions[qIdx].a)score++;
+  answers.push({q:questions[qIdx].q,chosen:idx,correct:idx===questions[qIdx].a});
+  render();
+}
+
+function nextQ(){
+  if(qIdx+1>=questions.length){screen='result';render();return;}
+  qIdx++;chosen=null;showExpl=false;render();
+}
+
+function getRank(pct){
+  for(var i=0;i<RANKS.length;i++){if(pct>=RANKS[i][3])return RANKS[i];}
+  return RANKS[RANKS.length-1];
+}
+
+function render(){
+  var app=document.getElementById('app');
+  if(screen==='menu'){app.innerHTML=renderMenu();return;}
+  if(screen==='quiz'){app.innerHTML=renderQuiz();return;}
+  if(screen==='result'){app.innerHTML=renderResult();}
+}
+
+function renderMenu(){
+  var h='<div class="surface-box mb-md" style="font-style:italic;font-size:0.9rem;line-height:1.7;color:var(--text-mid)">Test your knowledge of Yharnam. Ten questions from the lore. Scored in Insight.</div>';
+  h+='<div class="surface-box mb-md"><p class="eyebrow" style="margin-bottom:0.5rem">Difficulty</p><div style="display:flex;gap:0.5rem">';
+  ['All','Initiate','Hunter','Veteran'].forEach(function(t){
+    var tc=t==='All'?{color:'var(--accent)',glow:'var(--accent-s)'}:TIERS[t];
+    var active=filterTier===t;
+    h+='<button onclick="setFilter(\''+t+'\')" style="flex:1;padding:0.45rem 0.25rem;border-radius:3px;border:1px solid '+(active?tc.color:'var(--border)')+';background:'+(active?tc.color+'25':'transparent')+';color:'+(active?tc.glow:'var(--text-dim)')+';font-size:0.7rem;cursor:pointer;font-family:var(--font-display);letter-spacing:0.08em">'+t+'</button>';
+  });
+  h+='</div><p style="color:var(--text-faint);font-size:0.65rem;margin-top:0.5rem">'+(filterTier==='All'?'All '+QS.length+' questions':QS.filter(function(q){return q.tier===filterTier;}).length+' '+filterTier+' questions')+'</p></div>';
+  h+='<button onclick="startQuiz()" class="btn btn-primary" style="width:100%;padding:0.85rem;font-size:0.75rem">Begin the Hunt</button>';
+  h+='<div class="rank-list" style="margin-top:1.5rem"><p class="eyebrow" style="padding:0.4rem 0.75rem;border-bottom:1px solid var(--border-sub)">Insight Ranks</p>';
+  RANKS.forEach(function(r){h+='<div class="rank-row"><span style="color:'+r[2]+'">'+r[0]+'</span><span style="color:var(--text-faint)">'+r[3]+'%+</span></div>';});
+  h+='</div>';
+  return h;
+}
+
+function setFilter(t){filterTier=t;render();}
+
+function renderQuiz(){
+  var q=questions[qIdx];
+  var tc=TIERS[q.tier]||TIERS.Initiate;
+  var h='<div class="progress-pips">';
+  questions.forEach(function(_,i){h+='<div class="pip'+(i<qIdx?' past':i===qIdx?' current':'')+'"></div>';});
+  h+='</div>';
+  h+='<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.65rem">';
+  h+='<span class="tier-badge" style="color:'+tc.glow+';border-color:'+tc.color+'">'+q.tier+'</span>';
+  h+='<span style="color:var(--text-faint);font-size:0.65rem">Insight earned: '+score+'</span></div>';
+  h+='<div class="question-box"><p class="question-text">&ldquo;'+q.q+'&rdquo;</p></div>';
+  var nums=['I','II','III','IV'];
+  q.opts.forEach(function(opt,i){
+    var cls='option-btn';
+    var extra='';
+    if(chosen!==null){
+      if(i===q.a){cls+=' correct';extra='<span>&#10003;</span>';}
+      else if(i===chosen&&i!==q.a){cls+=' wrong';extra='<span>&#10007;</span>';}
+    }
+    h+='<button class="'+cls+'" '+(chosen!==null?'disabled':'')+' onclick="pickAnswer('+i+')">';
+    h+='<span><span class="option-num">'+nums[i]+'.</span>'+opt+'</span>'+extra+'</button>';
+  });
+  if(chosen!==null){
+    h+='<div class="explanation-box"><button class="expl-toggle" onclick="toggleExpl()"><span>LORE NOTE</span><span>'+(showExpl?'&#9650;':'&#9660;')+'</span></button>';
+    h+='<div class="expl-body'+(showExpl?' visible':'')+'">'+(q.exp||'')+'</div></div>';
+    h+='<button class="btn btn-primary" style="width:100%;padding:0.75rem" onclick="nextQ()">'+(qIdx+1>=questions.length?'See Results':'Next Question &rarr;')+'</button>';
+  }
+  return h;
+}
+
+function toggleExpl(){showExpl=!showExpl;render();}
+
+function renderResult(){
+  var pct=Math.round((score/questions.length)*100);
+  var rank=getRank(pct);
+  var h='<div class="result-box"><p class="eyebrow">Hunt Complete</p>';
+  h+='<div class="result-rank" style="color:'+rank[2]+';text-shadow:0 0 30px '+rank[2]+';margin:0.4rem 0">'+score+'<span style="font-size:1rem;color:var(--text-faint)">/'+questions.length+'</span></div>';
+  h+='<p style="font-family:var(--font-display);font-size:1rem;color:'+rank[2]+';margin:0.2rem 0">'+rank[0]+'</p>';
+  h+='<p style="color:var(--text-dim);font-size:0.8rem;font-style:italic;margin-bottom:0">'+rank[1]+'</p></div>';
+  h+='<div style="border:1px solid var(--border-sub);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem">';
+  h+='<p class="eyebrow" style="padding:0.4rem 0.75rem;border-bottom:1px solid var(--border-sub)">Review</p>';
+  answers.forEach(function(a){
+    h+='<div class="review-item" style="border-bottom:1px solid var(--border-sub)">';
+    h+='<span class="review-mark" style="color:'+(a.correct?'#059669':'#b91c1c')+'">'+(a.correct?'&#10003;':'&#10007;')+'</span>';
+    h+='<span class="review-text" style="color:'+(a.correct?'var(--text-mid)':'var(--text-dim)')+'">'+a.q+'</span></div>';
+  });
+  h+='</div>';
+  h+='<div style="display:flex;gap:0.5rem">';
+  h+='<button class="btn btn-primary" style="flex:1;padding:0.7rem" onclick="startQuiz()">Hunt Again</button>';
+  h+='<button class="btn" style="flex:1;padding:0.7rem" onclick="screen=\'menu\';render()">Main Menu</button>';
+  h+='</div>';
+  return h;
+}
+
+// Theme
+var tt=document.getElementById('themeToggle');
+var dark=localStorage.getItem('bb-theme')!=='light';
+if(!dark){document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';}
+tt.addEventListener('click',function(){
+  dark=!dark;
+  if(dark){document.documentElement.removeAttribute('data-theme');tt.textContent='\u2600';localStorage.setItem('bb-theme','dark');}
+  else{document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';localStorage.setItem('bb-theme','light');}
+});
+
+render();
+</script>
+</body>
+</html>

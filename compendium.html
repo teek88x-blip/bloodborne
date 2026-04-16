@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hunter's Compendium — Bloodborne</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.back-link{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);text-decoration:none;transition:color var(--transition)}
+.back-link:hover{color:var(--accent-s)}
+.area-list{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.area-btn{text-align:left;padding:0.32rem 0.6rem;border-radius:3px;font-size:0.78rem;border:none;cursor:pointer;background:transparent;color:var(--text-mid);border-left:2px solid transparent;font-family:var(--font-body);transition:background var(--transition),color var(--transition);width:100%}
+.area-btn:hover{background:var(--accent-dim)}
+.area-btn.past{color:var(--text-faint);text-decoration:line-through}
+.area-btn.current{background:rgba(200,134,10,0.15);color:var(--accent-s);border-left-color:rgba(200,134,10,0.4)}
+.area-btn.boss{border-left-color:rgba(159,18,57,0.3)}
+.area-badge{font-size:0.52rem;font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin-left:0.4rem;opacity:0.7}
+.quest-progress-bar{height:2px;background:var(--border-sub)}
+.quest-progress-fill{height:2px;transition:width 0.3s}
+.quest-body{padding:0.65rem 0.85rem;border-top:1px solid var(--border-sub);display:none}
+.quest-card.open .quest-body{display:block}
+.type-header{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font-display);margin:1rem 0 0.4rem;padding-bottom:0.25rem;border-bottom:1px solid}
+.tl-spine-color{background:linear-gradient(to bottom,#7c3aed,#1d4ed8,#0f766e,#b45309,#9f1239,#92400e)}
+.section-intro{text-align:center;color:var(--text-dim);font-size:0.75rem;margin-bottom:0.85rem;font-style:italic}
+.empty-state{text-align:center;color:var(--text-faint);font-style:italic;font-size:0.85rem;padding:2.5rem 0;font-family:var(--font-body)}
+.session-form{display:flex;flex-direction:column;gap:0.55rem}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="brand">
+    <a href="index.html" class="back-link">&larr; Hub</a>
+    <h1 style="font-size:1.2rem;margin-top:0.15rem">Compendium</h1>
+  </div>
+  <div class="header-controls">
+    <div class="toggle-wrap">
+      <span class="toggle-label">DLC</span>
+      <button class="toggle" id="dlcToggle"></button>
+    </div>
+    <button class="btn btn-icon" id="themeToggle" title="Toggle theme">&#9728;</button>
+  </div>
+</header>
+
+<nav class="tab-nav" id="tabNav">
+  <button class="tab-btn active" data-tab="primer">Primer</button>
+  <button class="tab-btn" data-tab="progress">Progress</button>
+  <button class="tab-btn" data-tab="glossary">Glossary</button>
+  <button class="tab-btn" data-tab="characters">Characters</button>
+  <button class="tab-btn" data-tab="bosses">Bosses</button>
+  <button class="tab-btn" data-tab="bestiary">Bestiary</button>
+  <button class="tab-btn" data-tab="locations">Locations</button>
+  <button class="tab-btn" data-tab="timeline">Timeline</button>
+  <button class="tab-btn" data-tab="quests">Quests</button>
+  <button class="tab-btn" data-tab="recap">Recap</button>
+  <button class="tab-btn" data-tab="journal">Journal</button>
+</nav>
+
+<main class="page-wrap" style="padding-top:0.25rem;padding-bottom:1rem">
+<section class="tab-panel active" id="tab-primer"><div id="primer-cards"></div></section>
+<section class="tab-panel" id="tab-progress">
+  <div class="surface-box mb-md">
+    <p class="eyebrow mb-sm">Currently At</p>
+    <p id="currentAreaName" style="font-size:1.2rem;font-family:var(--font-display);color:var(--accent-s);margin-bottom:0.15rem"></p>
+    <p id="currentPhase" style="font-size:0.68rem;color:var(--text-faint);font-family:var(--font-display)"></p>
+  </div>
+  <div class="surface-box mb-md">
+    <p class="eyebrow" style="margin-bottom:0.65rem">Update Progress</p>
+    <div class="area-list" id="areaList"></div>
+  </div>
+  <div style="border:1px solid var(--border);border-radius:var(--radius);padding:0.7rem">
+    <div class="flex-between" style="font-size:0.62rem;color:var(--text-dim);margin-bottom:0.35rem">
+      <span style="font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase">Journey</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
+    <div class="phase-dots" id="phaseDots"></div>
+  </div>
+</section>
+<section class="tab-panel" id="tab-glossary"><p class="section-intro">Terms unlock as the story progresses. Tap to expand.</p><div id="glossary-cards"></div></section>
+<section class="tab-panel" id="tab-characters"><p class="section-intro">Colour bar indicates faction. Unlocks on encounter.</p><div id="character-cards"></div></section>
+<section class="tab-panel" id="tab-bosses"><p class="section-intro">Amber bar = required. Grey bar = optional.</p><div id="boss-cards"></div></section>
+<section class="tab-panel" id="tab-bestiary"><p class="section-intro">Enemies grouped by type. Unlocks on first encounter.</p><div id="bestiary-cards"></div></section>
+<section class="tab-panel" id="tab-locations"><p class="section-intro">Every location, unlocked as you explore.</p><div id="location-cards"></div></section>
+<section class="tab-panel" id="tab-timeline"><p class="section-intro">Yharnam's history told forwards. The game tells it backwards.</p><div class="timeline-wrap"><div class="timeline-spine tl-spine-color"></div><div id="timeline-eras"></div></div></section>
+<section class="tab-panel" id="tab-quests"><p class="section-intro">NPC questlines have no in-game tracking. Tap steps to mark complete. Red = missable.</p><div id="quest-cards"></div></section>
+<section class="tab-panel" id="tab-recap">
+  <p class="section-intro">A running record of each session. Your previously-on reference.</p>
+  <div class="surface-box session-form mb-md">
+    <p class="eyebrow" style="margin-bottom:0.6rem">Log a Session</p>
+    <label class="field-label">Session name / number</label><input type="text" id="recapSession" placeholder="e.g. Session 3">
+    <label class="field-label mt-sm">Area reached</label><input type="text" id="recapArea" placeholder="e.g. Cathedral Ward">
+    <label class="field-label mt-sm">Bosses defeated</label><input type="text" id="recapBosses" placeholder="e.g. Cleric Beast, Father Gascoigne">
+    <label class="field-label mt-sm">Notes / highlights</label><textarea id="recapNotes" rows="3" placeholder="What happened? What was memorable?"></textarea>
+    <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;padding:0.55rem" onclick="addRecap()">Save Session</button>
+  </div>
+  <div id="recap-list"></div>
+</section>
+<section class="tab-panel" id="tab-journal">
+  <p class="section-intro">Theories, questions, moments worth remembering.</p>
+  <div class="surface-box mb-md">
+    <textarea id="journalInput" rows="3" placeholder="Write a note, theory, or question..."></textarea>
+    <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;padding:0.5rem" onclick="addJournalEntry()">Add Entry</button>
+  </div>
+  <div id="journal-list"><p class="empty-state">No entries yet. The night is long.</p></div>
+</section>
+</main>
+
+<footer class="site-footer">Fear the Old Blood &nbsp;&middot;&nbsp; <a href="index.html" style="color:var(--text-faint)">&larr; Back to Hub</a></footer>
+
+<script>
+var AREAS=[{name:"Hunter's Dream",phase:0},{name:"Central Yharnam",phase:0},{name:"Father Gascoigne",phase:0,boss:1},{name:"Cathedral Ward",phase:1},{name:"Old Yharnam",phase:1},{name:"Blood-Starved Beast",phase:1,boss:1},{name:"Hemwick Charnel Lane",phase:1},{name:"Witch of Hemwick",phase:1,boss:1},{name:"Vicar Amelia",phase:1,boss:1},{name:"Forbidden Woods",phase:2},{name:"Cainhurst Castle",phase:2},{name:"Darkbeast Paarl",phase:2,boss:1},{name:"Shadows of Yharnam",phase:2,boss:1},{name:"Byrgenwerth",phase:2},{name:"Rom, the Vacuous Spider",phase:2,boss:1},{name:"Yahar'gul",phase:3},{name:"The One Reborn",phase:3,boss:1},{name:"Nightmare Frontier",phase:3},{name:"Amygdala",phase:3,boss:1},{name:"Lecture Building",phase:3},{name:"Upper Cathedral Ward",phase:3},{name:"Ebrietas",phase:3,boss:1},{name:"Micolash",phase:3,boss:1},{name:"Nightmare of Mensis",phase:3},{name:"Mergo's Wet Nurse",phase:3,boss:1},{name:"Gehrman",phase:4,boss:1},{name:"Moon Presence",phase:4,boss:1},{name:"Hunter's Nightmare",phase:3,dlc:1},{name:"Ludwig",phase:3,boss:1,dlc:1},{name:"Research Hall",phase:3,dlc:1},{name:"Living Failures",phase:3,boss:1,dlc:1},{name:"Lady Maria",phase:3,boss:1,dlc:1},{name:"Fishing Hamlet",phase:3,dlc:1},{name:"Orphan of Kos",phase:3,boss:1,dlc:1}];
+var PHASE_LABELS=["Early Game","Mid Game","Mid-Late","Late Game","Endgame"];
+var PHASE_COLORS=["#92400e","#1d4ed8","#065f46","#7c3aed","#9f1239"];
+var FC={Hunters:"#b45309","Hunter's Dream":"#7c3aed","Healing Church":"#0f766e",Executioners:"#92400e",Vilebloods:"#9f1239",Byrgenwerth:"#1d4ed8",Civilian:"#4b5563","The League":"#065f46"};
+var PRIMERS=[{title:"What Is Bloodborne About?",content:"On the surface: a Hunter in Yharnam killing monsters through the night. Underneath: a game about the violence of seeking knowledge, the horror of what lies beyond human understanding, and whether ignorance is mercy. It borrows from Lovecraft, Bram Stoker, and Victorian gothic horror."},{title:"Why Is Everyone Mad?",content:"The blood. Yharnam's famous blood ministration has a cost. Long exposure causes beasthood — a primal transformation. But the madness goes deeper. Some people have seen things. The world is soaked in secrets kept too long, knowledge pursued too far, and the psychological wreckage that leaves behind."},{title:"The Shape of the Story",content:"Three broad acts. Early game: survival, the beast plague, Yharnam's surface. Mid game: the truth behind the Healing Church begins to surface. Late game: the cosmic horror underneath everything reveals itself and reframes everything you thought you understood."},{title:"How to Watch a FromSouls Game",content:"Death is part of the experience — don't feel bad for the player. The game is intentionally cryptic; not understanding things is normal and often the point. Pay attention to item descriptions, NPC dialogue, and architecture. The player's arc from helpless to masterful is worth watching as its own thing."}];
+var GLOSSARY=[{term:"Insight",u:0,summary:"A stat representing how much cosmic truth you've witnessed.",lore:"TBD"},{term:"The Hunt",u:0,summary:"The nightly ritual where Hunters cull the beast plague.",lore:"TBD"},{term:"Old Blood",u:0,summary:"The mysterious blood at the heart of Yharnam's medicine and its curse.",lore:"TBD"},{term:"Beasthood",u:0,summary:"The transformation that overtakes those who overuse the blood.",lore:"TBD"},{term:"Healing Church",u:0,summary:"The religious institution controlling Yharnam's blood ministration.",lore:"TBD"},{term:"Blood Echoes",u:0,summary:"The currency of Bloodborne, stolen from the dead.",lore:"TBD"},{term:"Caryll Runes",u:7,summary:"Transcriptions of Great One sounds granting passive powers.",lore:"TBD"},{term:"Kin",u:12,summary:"Enemies who have transcended beasthood toward something cosmic.",lore:"TBD"},{term:"Great Ones",u:14,summary:"Incomprehensible beings from beyond human understanding.",lore:"TBD"},{term:"Blood Moon",u:14,summary:"A world-state shift triggered mid-game. Everything changes.",lore:"TBD"},{term:"The Nightmare",u:19,summary:"A plane between the waking world and the cosmos.",lore:"TBD"},{term:"Umbilical Cord",u:23,summary:"Remnants of a connection to a Great One. Three unlock the true ending.",lore:"TBD"}];
+var NPCS=[{name:"Gehrman",f:"Hunters",u:0,role:"The First Hunter",lore:"TBD",art:"gehrman"},{name:"The Doll",f:"Hunter's Dream",u:0,role:"Keeper of the Dream",lore:"TBD",art:"the-doll"},{name:"Gilbert",f:"Civilian",u:1,role:"Ailing Traveller",lore:"TBD",art:"gilbert"},{name:"Eileen the Crow",f:"Hunters",u:1,role:"Hunter of Hunters",lore:"TBD",art:"eileen"},{name:"Viola's Daughter",f:"Civilian",u:1,role:"Lost Child of Yharnam",lore:"TBD",art:"violas-daughter"},{name:"Lonely Old Woman",f:"Civilian",u:1,role:"Frightened Survivor",lore:"TBD",art:"lonely-old-woman"},{name:"Oedon Chapel Dweller",f:"Civilian",u:3,role:"Cathedral Survivor",lore:"TBD",art:"oedon-chapel-dweller"},{name:"Alfred",f:"Executioners",u:3,role:"Hunter of the Executioners",lore:"TBD",art:"alfred"},{name:"Arianna",f:"Civilian",u:3,role:"Woman of the Night",lore:"TBD",art:"arianna"},{name:"Sister Adella",f:"Healing Church",u:3,role:"Church Servant",lore:"TBD",art:"sister-adella"},{name:"Djura",f:"Hunters",u:4,role:"Protector of Old Yharnam",lore:"TBD",art:"djura"},{name:"Iosefka",f:"Healing Church",u:1,role:"Clinic Doctor",lore:"TBD",art:"iosefka"},{name:"Master Willem",f:"Byrgenwerth",u:13,role:"Founder of Byrgenwerth",lore:"TBD",art:"master-willem"},{name:"Annalise",f:"Vilebloods",u:10,role:"Immortal Queen of Cainhurst",lore:"TBD",art:"annalise"},{name:"Valtr",f:"The League",u:9,role:"Beast Eater, Covenant Leader",lore:"TBD",art:"valtr"},{name:"Simon the Harrowed",f:"Hunters",u:27,role:"Old Hunter, Seeker of Truth",lore:"TBD",art:"simon",dlc:1},{name:"Lady Maria",f:"Hunters",u:29,role:"Clocktower Hunter",lore:"TBD",art:"lady-maria",dlc:1},{name:"Brador",f:"Healing Church",u:27,role:"Church Assassin",lore:"TBD",art:"brador",dlc:1}];
+var BOSSES=[{name:"Cleric Beast",area:"Central Yharnam",opt:1,u:1,lore:"TBD",notes:"TBD",art:"cleric-beast"},{name:"Father Gascoigne",area:"Central Yharnam",opt:0,u:2,lore:"TBD",notes:"TBD",art:"father-gascoigne"},{name:"Blood-Starved Beast",area:"Old Yharnam",opt:1,u:5,lore:"TBD",notes:"TBD",art:"blood-starved-beast"},{name:"Witch of Hemwick",area:"Hemwick Charnel Lane",opt:1,u:7,lore:"TBD",notes:"TBD",art:"witch-of-hemwick"},{name:"Vicar Amelia",area:"Cathedral Ward",opt:0,u:8,lore:"TBD",notes:"TBD",art:"vicar-amelia"},{name:"Darkbeast Paarl",area:"Hypogean Gaol",opt:1,u:11,lore:"TBD",notes:"TBD",art:"darkbeast-paarl"},{name:"Shadows of Yharnam",area:"Forbidden Woods",opt:0,u:12,lore:"TBD",notes:"TBD",art:"shadows-of-yharnam"},{name:"Rom, the Vacuous Spider",area:"Byrgenwerth",opt:0,u:14,lore:"TBD",notes:"TBD",art:"rom"},{name:"The One Reborn",area:"Yahar'gul",opt:0,u:16,lore:"TBD",notes:"TBD",art:"the-one-reborn"},{name:"Amygdala",area:"Nightmare Frontier",opt:1,u:18,lore:"TBD",notes:"TBD",art:"amygdala"},{name:"Celestial Emissary",area:"Upper Cathedral Ward",opt:1,u:20,lore:"TBD",notes:"TBD",art:"celestial-emissary"},{name:"Ebrietas",area:"Upper Cathedral Ward",opt:1,u:21,lore:"TBD",notes:"TBD",art:"ebrietas"},{name:"Micolash",area:"Nightmare of Mensis",opt:0,u:22,lore:"TBD",notes:"TBD",art:"micolash"},{name:"Mergo's Wet Nurse",area:"Nightmare of Mensis",opt:0,u:24,lore:"TBD",notes:"TBD",art:"mergos-wet-nurse"},{name:"Gehrman",area:"Hunter's Dream",opt:0,u:25,lore:"TBD",notes:"TBD",art:"gehrman-boss"},{name:"Moon Presence",area:"Hunter's Dream",opt:1,u:26,lore:"TBD",notes:"TBD",art:"moon-presence"},{name:"Ludwig",area:"Hunter's Nightmare",opt:0,u:28,lore:"TBD",notes:"TBD",art:"ludwig",dlc:1},{name:"Laurence",area:"Hunter's Nightmare",opt:1,u:28,lore:"TBD",notes:"TBD",art:"laurence",dlc:1},{name:"Living Failures",area:"Research Hall",opt:0,u:30,lore:"TBD",notes:"TBD",art:"living-failures",dlc:1},{name:"Lady Maria",area:"Astral Clocktower",opt:0,u:31,lore:"TBD",notes:"TBD",art:"lady-maria-boss",dlc:1},{name:"Orphan of Kos",area:"Fishing Hamlet",opt:0,u:33,lore:"TBD",notes:"TBD",art:"orphan-of-kos",dlc:1}];
+var ENEMIES=[{name:"Yharnam Villagers",t:"Beast",fs:"Central Yharnam",u:1,lore:"TBD",art:"yharnam-villagers"},{name:"Werewolves",t:"Beast",fs:"Central Yharnam",u:1,lore:"TBD",art:"werewolves"},{name:"Scourge Beasts",t:"Beast",fs:"Central Yharnam",u:1,lore:"TBD",art:"scourge-beasts"},{name:"Church Giants",t:"Beast",fs:"Cathedral Ward",u:3,lore:"TBD",art:"church-giants"},{name:"Afflicted Villagers",t:"Beast",fs:"Old Yharnam",u:4,lore:"TBD",art:"afflicted-villagers"},{name:"Bloodletting Beasts",t:"Beast",fs:"Yahar'gul",u:15,lore:"TBD",art:"bloodletting-beasts"},{name:"Church Servants",t:"Human",fs:"Cathedral Ward",u:3,lore:"TBD",art:"church-servants"},{name:"Hemwick Grave Women",t:"Human",fs:"Hemwick Charnel Lane",u:6,lore:"TBD",art:"hemwick-grave-women"},{name:"Snatchers",t:"Human",fs:"Forbidden Woods",u:9,lore:"TBD",art:"snatchers"},{name:"Vileblood Servants",t:"Human",fs:"Cainhurst Castle",u:10,lore:"TBD",art:"vileblood-servants"},{name:"Pthumerian Descendants",t:"Human",fs:"Nightmare Frontier",u:17,lore:"TBD",art:"pthumerian-descendants"},{name:"Mad Ones",t:"Kin",fs:"Hemwick Charnel Lane",u:6,lore:"TBD",art:"mad-ones"},{name:"Cainhurst Ghosts",t:"Kin",fs:"Cainhurst Castle",u:10,lore:"TBD",art:"cainhurst-ghosts"},{name:"Amygdalae",t:"Kin",fs:"Cathedral Ward (hidden)",u:14,lore:"TBD",art:"amygdalae"},{name:"Brainsuckers",t:"Kin",fs:"Lecture Building",u:19,lore:"TBD",art:"brainsuckers"},{name:"Brain of Mensis",t:"Kin",fs:"Nightmare of Mensis",u:23,lore:"TBD",art:"brain-of-mensis"}];
+var LOCATIONS=[{name:"Hunter's Dream",type:"Realm",u:0,lore:"TBD",art:"hunters-dream"},{name:"Central Yharnam",type:"District",u:1,lore:"TBD",art:"central-yharnam"},{name:"Cathedral Ward",type:"District",u:3,lore:"TBD",art:"cathedral-ward"},{name:"Old Yharnam",type:"District",u:4,lore:"TBD",art:"old-yharnam"},{name:"Healing Church Workshop",type:"Building",u:5,lore:"TBD",art:"healing-church-workshop"},{name:"Hemwick Charnel Lane",type:"District",u:6,lore:"TBD",art:"hemwick-charnel-lane"},{name:"Forbidden Woods",type:"Wilderness",u:9,lore:"TBD",art:"forbidden-woods"},{name:"Cainhurst Castle",type:"Building",u:10,lore:"TBD",art:"cainhurst-castle"},{name:"Hypogean Gaol",type:"District",u:11,lore:"TBD",art:"hypogean-gaol"},{name:"Byrgenwerth",type:"Building",u:13,lore:"TBD",art:"byrgenwerth"},{name:"Yahar'gul",type:"District",u:15,lore:"TBD",art:"yahargul"},{name:"Nightmare Frontier",type:"Realm",u:17,lore:"TBD",art:"nightmare-frontier"},{name:"Lecture Building",type:"Building",u:19,lore:"TBD",art:"lecture-building"},{name:"Upper Cathedral Ward",type:"District",u:20,lore:"TBD",art:"upper-cathedral-ward"},{name:"Nightmare of Mensis",type:"Realm",u:23,lore:"TBD",art:"nightmare-of-mensis"},{name:"Hunter's Nightmare",type:"Realm",u:27,lore:"TBD",art:"hunters-nightmare",dlc:1},{name:"Research Hall",type:"Building",u:29,lore:"TBD",art:"research-hall",dlc:1},{name:"Fishing Hamlet",type:"District",u:31,lore:"TBD",art:"fishing-hamlet",dlc:1}];
+var TIMELINE=[{era:"Ancient Times",color:"#7c3aed",events:[{title:"The Pthumerians",text:"An ancient civilisation discovers the Great Ones deep beneath the earth. They make contact. The Great Ones leave behind wisdom and the Old Blood."},{title:"The Chalice Dungeons",text:"Pthumerian society builds labyrinthine tombs to house their discoveries. The dungeons beneath Yharnam still hold relics of this age — and things that should not be awake."}]},{era:"Founding of Byrgenwerth",color:"#1d4ed8",events:[{title:"Master Willem's Discovery",text:"Scholars from Byrgenwerth College descend into the Chalice Dungeons. Master Willem becomes obsessed with ascending to a higher plane — more eyes, more insight."},{title:"Laurence the Student",text:"Laurence studies under Willem. He believes the Old Blood should be shared with humanity as medicine. Willem disagrees. This split will define everything that follows."}]},{era:"The Healing Church",color:"#0f766e",events:[{title:"The Schism",text:"Laurence breaks from Byrgenwerth and founds the Healing Church in Yharnam, taking the Old Blood with him."},{title:"Blood Ministration",text:"The Healing Church introduces blood ministration. The sick are healed. Pilgrims arrive from across the world. The Church grows wealthy and powerful."},{title:"The Hunters are Founded",text:"Gehrman becomes the first Hunter. The Church trains hunters to cull beasts — people transformed by overexposure to the blood."},{title:"Cainhurst and the Vilebloods",text:"Laurence brings blood to Cainhurst and its queen, Annalise. The Vilebloods are born. Logarius and his Executioners lay siege to Cainhurst. Logarius dies sealing Annalise away."}]},{era:"The Dream and Gehrman",color:"#b45309",events:[{title:"The Hunter's Dream",text:"The Moon Presence forms a pact with Gehrman. The Hunter's Dream is created: a liminal space where hunters revive after death, allowing the Hunt to continue indefinitely."},{title:"Gehrman's Trap",text:"Gehrman discovers he cannot leave the Dream. He is its caretaker — perhaps its prisoner. He creates the Doll for company and grows old waiting, tending an endless cycle of hunters."},{title:"The Old Hunters",text:"A generation of hunters serves the Church. Among them: Lady Maria, Gehrman's finest student. They do terrible things — including the massacre at the Fishing Hamlet. Their sins are sealed in their own Nightmare."}]},{era:"The Beast Plague",color:"#9f1239",events:[{title:"The Scourge Spreads",text:"Beasthood spreads through Yharnam faster than the Church can contain it. Old Yharnam is burned in an early attempt to stop the plague. It doesn't work."},{title:"The Church's Secret Research",text:"The upper echelons of the Church begin experimenting with direct contact with the Great Ones. They hide Ebrietas — a Great One left behind — and use her to empower their rituals."},{title:"The School of Mensis",text:"A splinter group of scholars performs a ritual to contact the Great Ones. Micolash remains in the Nightmare, endlessly chasing communion with something vast."}]},{era:"The Night of the Hunt",color:"#92400e",events:[{title:"You Arrive",text:"A stranger comes to Yharnam for blood ministration. The night of the Hunt begins. The plague is at its peak. Something is about to change."},{title:"The Blood Moon",text:"Rom the Vacuous Spider maintained a veil hiding the true state of the world. Her death triggers the Blood Moon — a permanent world-state shift. The Nightmare bleeds into reality."},{title:"The Three Endings",text:"The Hunter faces Gehrman, who offers release from the Dream. Three choices: accept death and wake, refuse and fight, or — if three Umbilical Cords have been consumed — transcend."}]}];
+var NPC_QUESTS=[{name:"Eileen the Crow",faction:"Hunters",missable:true,steps:[{id:"e1",text:"Meet Eileen in Central Yharnam near the sewers or a hunter corpse.",warn:false},{id:"e2",text:"Speak to her again after opening the gate shortcut near Gascoigne's lamp.",warn:false},{id:"e3",text:"Find her wounded in Cathedral Ward near the Grand Cathedral lamp. Do NOT defeat Vicar Amelia before triggering this.",warn:true},{id:"e4",text:"Defeat Henryk near Gascoigne's grave to complete her quest. She rewards you with the Hunter rune.",warn:false},{id:"e5",text:"Vicar Amelia's death locks you out if step 3 is missed.",warn:true}]},{name:"Alfred",faction:"Executioners",missable:true,steps:[{id:"a1",text:"Meet Alfred in Cathedral Ward near the first lamp.",warn:false},{id:"a2",text:"Give him the Unopened Summons found in Cainhurst Castle.",warn:false},{id:"a3",text:"Visit Annalise's chamber in Cainhurst after giving Alfred the summons.",warn:true},{id:"a4",text:"Find Alfred near the Oedon Chapel. He gives you the Radiance rune and reveals what he has become.",warn:false}]},{name:"Arianna",faction:"Civilian",missable:true,steps:[{id:"ar1",text:"Find Arianna in lower Cathedral Ward. Direct her to Oedon Chapel.",warn:false},{id:"ar2",text:"She gives you the Blood of Arianna when spoken to.",warn:false},{id:"ar3",text:"Save her BEFORE defeating Rom. Any NPCs not safely housed when the Blood Moon rises are lost.",warn:true},{id:"ar4",text:"After the Blood Moon, visit Oedon Chapel. Something has happened to Arianna.",warn:true}]},{name:"Iosefka",faction:"Healing Church",missable:false,steps:[{id:"io1",text:"Speak to Iosefka through her clinic door early in the game.",warn:false},{id:"io2",text:"Her voice changes if you send NPCs to her. The person behind the door is not the original.",warn:true},{id:"io3",text:"Access the back of the clinic via the Forbidden Woods shortcut to see the truth.",warn:false},{id:"io4",text:"After defeating Rom, Iosefka becomes hostile. Defeat her to receive the One Third of Umbilical Cord.",warn:true}]},{name:"Sister Adella",faction:"Healing Church",missable:true,steps:[{id:"ad1",text:"Find Sister Adella in Hypogean Gaol. Direct her to Oedon Chapel.",warn:false},{id:"ad2",text:"Do NOT let Arianna give you her blood while Adella is in the Chapel — she will become hostile and kill Arianna.",warn:true},{id:"ad3",text:"If she survives, she gives you Arianna's Blood after the Blood Moon.",warn:false}]},{name:"Djura",faction:"Hunters",missable:false,steps:[{id:"dj1",text:"Enter Old Yharnam. Djura opens fire from his tower.",warn:false},{id:"dj2",text:"Option A: Kill him immediately for the Powder Keg Hunter Badge only.",warn:false},{id:"dj3",text:"Option B (recommended): Defeat Darkbeast Paarl first. Approach from below without killing beasts and he stands down, giving you his gesture AND the badge.",warn:true}]},{name:"Valtr, Master of the League",faction:"The League",missable:false,steps:[{id:"v1",text:"Find Valtr in the Forbidden Woods, in the shortcut elevator alcove.",warn:false},{id:"v2",text:"Equip the Impurity rune he gives you to join the League.",warn:false},{id:"v3",text:"Collect 5 Vermin by crushing them after successful co-op hunts and offer them to Valtr.",warn:false},{id:"v4",text:"After 5 Vermin, Valtr gives you his weapon. Return later — his helmet is on the ground. He is gone.",warn:true}]},{name:"Viola's Daughter",faction:"Civilian",missable:true,steps:[{id:"vd1",text:"Speak to the young girl in a window in Central Yharnam before fighting Gascoigne.",warn:false},{id:"vd2",text:"Find Viola's corpse near Gascoigne's arena and take the Red Jewelled Brooch.",warn:false},{id:"vd3",text:"Do NOT give her the brooch. Send her to Oedon Chapel instead.",warn:true},{id:"vd4",text:"If sent to safety she survives, though she will be gone from the window.",warn:false}]}];
+
+var state={
+  area:parseInt(localStorage.getItem('bb-area')||'0'),
+  dlc:localStorage.getItem('bb-dlc')==='true',
+  theme:localStorage.getItem('bb-theme')||'dark',
+  quest:JSON.parse(localStorage.getItem('bb-quest')||'{}'),
+  recaps:JSON.parse(localStorage.getItem('bb-recaps')||'[]'),
+  journal:JSON.parse(localStorage.getItem('bb-journal')||'[]')
+};
+
+function save(){
+  localStorage.setItem('bb-area',state.area);
+  localStorage.setItem('bb-dlc',state.dlc);
+  localStorage.setItem('bb-theme',state.theme);
+  localStorage.setItem('bb-quest',JSON.stringify(state.quest));
+  localStorage.setItem('bb-recaps',JSON.stringify(state.recaps));
+  localStorage.setItem('bb-journal',JSON.stringify(state.journal));
+}
+
+var expandState={};
+function artImg(slug,alt){
+  return '<img src="assets/art/'+slug+'-art.png" alt="'+alt+'" class="art-img" onerror="this.outerHTML=\'<div class=\\\"art-placeholder\\\">'+slug+'-art.png</div>\'">';
+}
+
+function buildCard(o){
+  var open=expandState[o.id]||false;
+  var art=o.art?artImg(o.art,o.title):'';
+  var locked=o.locked?'locked ':'';
+  var openCls=open?'open ':'';
+  return '<div class="card card-left-bar '+locked+openCls+'" data-id="'+o.id+'" style="border-left-color:'+(o.locked?'var(--border-sub)':o.lc||'var(--accent)')+'">'+
+    '<div class="card-header" onclick="toggleCard(this)">'+
+      '<div>'+
+        '<div class="card-title">'+o.title+'</div>'+
+        (o.s1?'<div class="card-sub1" style="color:'+(o.s1c||'var(--accent)')+'">'+o.s1+'</div>':'')+
+        (o.s2?'<div class="card-sub2">'+o.s2+'</div>':'')+
+      '</div>'+
+      '<div style="display:flex;gap:0.4rem;align-items:center;flex-shrink:0">'+
+        (o.badge?'<span class="badge" style="color:'+o.bc+';border-color:'+o.bc+'">'+o.badge+'</span>':'')+
+        (o.locked?'<span style="font-size:0.6rem;color:var(--text-faint)">Locked</span>':'<span class="card-chevron">&and;</span>')+
+      '</div>'+
+    '</div>'+
+    '<div class="card-body">'+art+(o.body||'')+'</div>'+
+  '</div>';
+}
+
+function toggleCard(h){
+  var card=h.parentElement;
+  if(card.classList.contains('locked'))return;
+  var id=card.getAttribute('data-id');
+  card.classList.toggle('open');
+  expandState[id]=card.classList.contains('open');
+}
+
+function lore(t){return '<p class="lore-text mt-sm">'+t+'</p>';}
+
+function renderPrimer(){
+  var h='';
+  PRIMERS.forEach(function(p){h+='<div class="surface-box mb-md"><h3 style="font-size:0.92rem;color:var(--accent-s);margin-bottom:0.4rem">'+p.title+'</h3><p style="font-size:0.84rem;color:var(--text-mid);line-height:1.7">'+p.content+'</p></div>';});
+  h+='<div style="border:1px solid rgba(200,134,10,0.2);background:rgba(200,134,10,0.05);border-radius:var(--radius);padding:0.85rem;text-align:center"><p style="font-size:0.78rem;color:var(--text-dim);line-height:1.6">All entries unlock automatically as you update the <strong style="color:var(--accent-s)">Progress</strong> tab.</p></div>';
+  document.getElementById('primer-cards').innerHTML=h;
+}
+
+function renderProgress(){
+  var a=state.area;
+  document.getElementById('currentAreaName').textContent=AREAS[a].name;
+  document.getElementById('currentPhase').textContent=PHASE_LABELS[AREAS[a].phase];
+  var h='';
+  AREAS.filter(function(x){return !x.dlc||state.dlc;}).forEach(function(x){
+    var idx=AREAS.indexOf(x);
+    var cls=(idx<a?'past':idx===a?'current':'')+(x.boss?' boss':'');
+    var pre=idx<a?'&#10003; ':idx===a?'&#9658; ':'\u00a0\u00a0';
+    h+='<button class="area-btn '+cls+'" onclick="setArea('+idx+')">'+pre+x.name+
+      (x.boss?'<span class="area-badge" style="color:#7c2d12">BOSS</span>':'')+
+      (x.dlc?'<span class="area-badge" style="color:#4c1d95">DLC</span>':'')+
+    '</button>';
+  });
+  document.getElementById('areaList').innerHTML=h;
+  var pct=Math.round((a/(AREAS.length-1))*100);
+  document.getElementById('progressPct').textContent=pct+'%';
+  document.getElementById('progressBar').style.width=pct+'%';
+  var pd='';
+  PHASE_LABELS.forEach(function(_,i){pd+='<div class="phase-dot" style="background:'+(AREAS[a].phase>=i?PHASE_COLORS[i]:'var(--border-sub)')+'"></div>';});
+  document.getElementById('phaseDots').innerHTML=pd;
+}
+
+function setArea(idx){state.area=idx;save();renderAll();}
+
+function renderGlossary(){
+  var h='';
+  GLOSSARY.forEach(function(g){
+    h+=buildCard({id:'g-'+g.term,locked:g.u>state.area,lc:'var(--accent)',title:g.term,s1:g.summary,s1c:'var(--text-dim)',body:lore(g.lore)});
+  });
+  document.getElementById('glossary-cards').innerHTML=h;
+}
+
+function renderCharacters(){
+  var h='';
+  NPCS.filter(function(n){return !n.dlc||state.dlc;}).forEach(function(n){
+    var fc=FC[n.f]||'var(--text-dim)';
+    h+=buildCard({id:'n-'+n.name,locked:n.u>state.area,lc:fc,title:n.name,s1:n.f+' &middot; '+n.role,s1c:fc,art:n.art,badge:n.dlc?'DLC':null,bc:'#7c3aed',body:lore(n.lore)});
+  });
+  document.getElementById('character-cards').innerHTML=h;
+}
+
+function renderBosses(){
+  var h='';
+  BOSSES.filter(function(b){return !b.dlc||state.dlc;}).forEach(function(b){
+    var body='<p style="font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--accent);margin-top:0.65rem;margin-bottom:0.1rem">Lore</p>'+lore(b.lore)+
+      '<p style="font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--accent);margin-top:0.6rem;margin-bottom:0.1rem">Watcher Notes</p>'+lore(b.notes);
+    h+=buildCard({id:'b-'+b.name,locked:b.u>state.area,lc:b.opt?'var(--text-dim)':'var(--accent)',title:b.name,s1:'~ '+b.area,s1c:'var(--text-dim)',s2:b.opt?'Optional':'Required',art:b.art,badge:b.dlc?'DLC':null,bc:'#7c3aed',body:body});
+  });
+  document.getElementById('boss-cards').innerHTML=h;
+}
+
+function renderBestiary(){
+  var TC={Beast:'#b45309',Human:'#57534e',Kin:'#1d4ed8'};
+  var h='';
+  ['Beast','Human','Kin'].forEach(function(type){
+    var tc=TC[type];
+    h+='<div class="type-header" style="color:'+tc+';border-color:'+tc+'40">'+type+'</div>';
+    ENEMIES.filter(function(e){return e.t===type&&e.u<=state.area;}).forEach(function(e){
+      h+=buildCard({id:'e-'+e.name,locked:false,lc:tc,title:e.name,s2:'First seen: '+e.fs,art:e.art,body:lore(e.lore)});
+    });
+    var cnt=ENEMIES.filter(function(e){return e.t===type&&e.u>state.area;}).length;
+    if(cnt)h+='<p style="color:var(--text-faint);font-size:0.7rem;font-style:italic;margin:0 0 0.5rem">+ '+cnt+' locked</p>';
+  });
+  document.getElementById('bestiary-cards').innerHTML=h;
+}
+
+function renderLocations(){
+  var h='';
+  LOCATIONS.filter(function(l){return !l.dlc||state.dlc;}).forEach(function(l){
+    h+=buildCard({id:'l-'+l.name,locked:l.u>state.area,lc:'var(--blue)',title:l.name,s2:l.type+(l.dlc?' &middot; DLC':''),art:l.art,body:lore(l.lore)});
+  });
+  document.getElementById('location-cards').innerHTML=h;
+}
+
+function renderTimeline(){
+  var h='';
+  TIMELINE.forEach(function(era){
+    h+='<div class="timeline-era"><div class="timeline-era-header"><div class="timeline-dot" style="background:'+era.color+';box-shadow:0 0 8px '+era.color+'"></div><span class="timeline-era-label" style="color:'+era.color+'">'+era.era+'</span></div><div class="timeline-events">';
+    era.events.forEach(function(ev){
+      h+='<div class="timeline-event" style="border-left-color:'+era.color+'60"><div class="timeline-event-title">'+ev.title+'</div><div class="timeline-event-text">'+ev.text+'</div></div>';
+    });
+    h+='</div></div>';
+  });
+  document.getElementById('timeline-eras').innerHTML=h;
+}
+
+function renderQuests(){
+  var h='';
+  NPC_QUESTS.forEach(function(q){
+    var fc=FC[q.faction]||'#4b5563';
+    var done=q.steps.filter(function(s){return state.quest[s.id];}).length;
+    var pct=Math.round((done/q.steps.length)*100);
+    var complete=done===q.steps.length;
+    var steps='';
+    q.steps.forEach(function(s){
+      var d=!!state.quest[s.id];
+      var cls='quest-step'+(d?' done':'')+(s.warn&&!d?' warn':'');
+      steps+='<div class="'+cls+'" onclick="toggleStep(\''+s.id+'\')">'+
+        '<span class="step-check">'+(d?'&#9745;':'&#9744;')+'</span>'+
+        '<span class="step-text">'+(s.warn&&!d?'<span class="step-warn-icon">!</span>':'')+s.text+'</span>'+
+      '</div>';
+    });
+    var open=expandState['q-'+q.name];
+    h+='<div class="card card-left-bar quest-card '+(open?'open ':'') +'" style="border-left-color:'+fc+';margin-bottom:0.6rem" data-id="q-'+q.name+'">'+
+      '<div class="card-header" onclick="toggleCard(this)">'+
+        '<div><div class="card-title" style="color:'+(complete?'var(--green-s)':'var(--text)')+'">'+q.name+'</div>'+
+        '<div class="card-sub1" style="color:'+fc+'">'+q.faction+(q.missable?' &middot; Missable':'')+'</div></div>'+
+        '<div style="text-align:right"><div class="card-chevron">&and;</div>'+
+        '<div style="font-size:0.62rem;color:'+(complete?'var(--green-s)':'var(--text-dim)')+';margin-top:0.1rem">'+done+'/'+q.steps.length+'</div></div>'+
+      '</div>'+
+      '<div class="quest-progress-bar"><div class="quest-progress-fill" style="width:'+pct+'%;background:'+(complete?'var(--green-s)':fc)+'"></div></div>'+
+      '<div class="quest-body">'+steps+'</div>'+
+    '</div>';
+  });
+  document.getElementById('quest-cards').innerHTML=h;
+}
+
+function toggleStep(id){state.quest[id]=!state.quest[id];save();renderQuests();}
+
+function renderRecaps(){
+  if(!state.recaps.length){document.getElementById('recap-list').innerHTML='<p class="empty-state">No sessions logged yet.</p>';return;}
+  var h='';
+  state.recaps.forEach(function(r){
+    h+='<div class="recap-card">'+
+      '<div class="recap-header"><span style="font-weight:600;font-family:var(--font-display);font-size:0.88rem">'+r.session+'</span><span style="font-size:0.62rem;color:var(--text-faint)">'+r.date+'</span></div>'+
+      '<div class="recap-body">'+
+        (r.area?'<div class="recap-row">Area: '+r.area+'</div>':'')+
+        (r.bosses?'<div class="recap-row bosses">Bosses: '+r.bosses+'</div>':'')+
+        (r.notes?'<div class="recap-notes">'+r.notes+'</div>':'')+
+      '</div></div>';
+  });
+  document.getElementById('recap-list').innerHTML=h;
+}
+
+function addRecap(){
+  var s=document.getElementById('recapSession').value.trim();if(!s)return;
+  state.recaps.unshift({session:s,area:document.getElementById('recapArea').value.trim(),bosses:document.getElementById('recapBosses').value.trim(),notes:document.getElementById('recapNotes').value.trim(),date:new Date().toLocaleDateString()});
+  save();
+  ['recapSession','recapArea','recapBosses','recapNotes'].forEach(function(id){document.getElementById(id).value='';});
+  renderRecaps();
+}
+
+function renderJournal(){
+  if(!state.journal.length){document.getElementById('journal-list').innerHTML='<p class="empty-state">No entries yet. The night is long.</p>';return;}
+  var h='';
+  state.journal.forEach(function(e){h+='<div class="journal-entry"><div class="journal-entry-text">'+e.text+'</div><div class="journal-entry-time">'+e.time+'</div></div>';});
+  document.getElementById('journal-list').innerHTML=h;
+}
+
+function addJournalEntry(){
+  var el=document.getElementById('journalInput'),text=el.value.trim();if(!text)return;
+  state.journal.unshift({text:text,time:new Date().toLocaleTimeString()});
+  el.value='';save();renderJournal();
+}
+
+document.getElementById('journalInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addJournalEntry();}});
+
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.getAttribute('data-tab')).classList.add('active');
+  });
+});
+
+var tt=document.getElementById('themeToggle');
+if(state.theme==='light'){document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';}
+tt.addEventListener('click',function(){
+  var il=document.documentElement.getAttribute('data-theme')==='light';
+  if(il){document.documentElement.removeAttribute('data-theme');tt.textContent='\u2600';state.theme='dark';}
+  else{document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';state.theme='light';}
+  save();
+});
+
+var dt=document.getElementById('dlcToggle');
+if(state.dlc)dt.classList.add('on');
+dt.addEventListener('click',function(){state.dlc=!state.dlc;dt.classList.toggle('on',state.dlc);save();renderAll();});
+
+function renderAll(){renderPrimer();renderProgress();renderGlossary();renderCharacters();renderBosses();renderBestiary();renderLocations();renderTimeline();renderQuests();renderRecaps();renderJournal();}
+renderAll();
+</script>
+</body>
+</html>
