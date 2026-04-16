@@ -124,7 +124,9 @@ var NODES=[
   {id:"micolash",label:"Micolash",f:"byrgen",x:835,y:310,desc:"Host of the Nightmare. A Mensis scholar who trapped himself in a dream to meet the Great Ones. He got what he wanted."},
   {id:"gilbert",label:"Gilbert",f:"civilian",x:155,y:415,desc:"Came to Yharnam for the blood cure. Friendly, helpful, and dying. One of the few voices of warmth in the game."},
   {id:"arianna",label:"Arianna",f:"civilian",x:360,y:595,desc:"A woman of the night in Cathedral Ward. Sending her to safety matters more than it first appears."},
-  {id:"valtr",label:"Valtr",f:"league",x:215,y:640,desc:"Master of the League. Hunts beasts with cooperators and eats the vermin he finds in their corpses."}
+  {id:"valtr",label:"Valtr",f:"league",x:215,y:640,desc:"Master of the League. Hunts beasts with cooperators and eats the vermin he finds in their corpses."},
+  {id:"henryk",label:"Henryk",f:"hunters",x:100,y:580,desc:"Gascoigne's old hunting partner. Succumbed to bloodlust and became the target of Eileen the Crow's hunt. A veteran who kept going past the point where stopping was possible."},
+  {id:"patches",label:"Patches",f:"civilian",x:680,y:650,desc:"An unsavoury merchant in the Lecture Building, partially transformed into something spider-like. Recurring across FromSoftware games. Always survives."}
 ];
 var EDGES=[
   {a:"moon",b:"dream",type:"control",label:"created & controls"},
@@ -166,7 +168,11 @@ var EDGES=[
   {a:"valtr",b:"hunter",type:"ally",label:"covenant partner"},
   {a:"djura",b:"gascoigne",type:"ally",label:"former companions"},
   {a:"djura",b:"hunter",type:"ally",label:"can become ally"},
-  {a:"djura",b:"church",type:"enemy",label:"rejected their methods"}
+  {a:"djura",b:"church",type:"enemy",label:"rejected their methods"},
+  {a:"henryk",b:"gascoigne",type:"ally",label:"hunting partners"},
+  {a:"henryk",b:"eileen",type:"enemy",label:"target of her hunt"},
+  {a:"henryk",b:"hunter",type:"enemy",label:"fought in questline"},
+  {a:"patches",b:"hunter",type:"ally",label:"merchant"}
 ];
 
 // ─── CANVAS SETUP ────────────────────────────────────────────────────────────
