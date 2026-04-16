@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lore Timeline — Bloodborne</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.back-link{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);text-decoration:none;transition:color var(--transition)}
+.back-link:hover{color:var(--accent-s)}
+.tl-spine-color{background:linear-gradient(to bottom,#7c3aed,#1d4ed8,#0f766e,#b45309,#9f1239,#92400e)}
+.tl-intro{text-align:center;color:var(--text-dim);font-size:0.82rem;font-style:italic;line-height:1.7;max-width:480px;margin:0 auto 2rem}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <a href="index.html" class="back-link">&larr; Hub</a>
+    <h1 style="font-size:1.2rem;margin-top:0.15rem">Lore Timeline</h1>
+  </div>
+  <button class="btn btn-icon" id="themeToggle">&#9728;</button>
+</header>
+
+<main class="page-wrap" style="padding-top:1.5rem;padding-bottom:2rem">
+  <p class="tl-intro">Yharnam's history told forwards. The game tells it backwards — you piece it together as you go. This is the full picture.</p>
+  <div class="timeline-wrap">
+    <div class="timeline-spine tl-spine-color"></div>
+    <div id="timeline-eras"></div>
+  </div>
+</main>
+
+<footer class="site-footer">Fear the Old Blood &nbsp;&middot;&nbsp; <a href="index.html" style="color:var(--text-faint)">&larr; Back to Hub</a></footer>
+
+<script>
+var TIMELINE=[{era:"Ancient Times",color:"#7c3aed",events:[{title:"The Pthumerians",text:"An ancient civilisation discovers the Great Ones deep beneath the earth. They make contact. The Great Ones leave behind wisdom and the Old Blood."},{title:"The Chalice Dungeons",text:"Pthumerian society builds labyrinthine tombs to house their discoveries. The dungeons beneath Yharnam still hold relics of this age — and things that should not be awake."}]},{era:"Founding of Byrgenwerth",color:"#1d4ed8",events:[{title:"Master Willem's Discovery",text:"Scholars from Byrgenwerth College descend into the Chalice Dungeons. Master Willem becomes obsessed with ascending to a higher plane — more eyes, more insight."},{title:"Laurence the Student",text:"Laurence studies under Willem. He believes the Old Blood should be shared with humanity as medicine. Willem disagrees. This split will define everything that follows."}]},{era:"The Healing Church",color:"#0f766e",events:[{title:"The Schism",text:"Laurence breaks from Byrgenwerth and founds the Healing Church in Yharnam, taking the Old Blood with him."},{title:"Blood Ministration",text:"The Healing Church introduces blood ministration. The sick are healed. Pilgrims arrive from across the world. The Church grows wealthy and powerful."},{title:"The Hunters are Founded",text:"Gehrman becomes the first Hunter. The Church trains hunters to cull beasts — people transformed by overexposure to the blood."},{title:"Cainhurst and the Vilebloods",text:"Laurence brings blood to Cainhurst and its queen, Annalise. The Vilebloods are born. Logarius and his Executioners lay siege to Cainhurst. Logarius dies sealing Annalise away."}]},{era:"The Dream and Gehrman",color:"#b45309",events:[{title:"The Hunter's Dream",text:"The Moon Presence forms a pact with Gehrman. The Hunter's Dream is created: a liminal space where hunters revive after death, allowing the Hunt to continue indefinitely."},{title:"Gehrman's Trap",text:"Gehrman discovers he cannot leave the Dream. He is its caretaker — perhaps its prisoner. He creates the Doll for company and grows old waiting, tending an endless cycle of hunters."},{title:"The Old Hunters",text:"A generation of hunters serves the Church. Among them: Lady Maria, Gehrman's finest student. They do terrible things — including the massacre at the Fishing Hamlet. Their sins are sealed in their own Nightmare."}]},{era:"The Beast Plague",color:"#9f1239",events:[{title:"The Scourge Spreads",text:"Beasthood spreads through Yharnam faster than the Church can contain it. Old Yharnam is burned in an early attempt to stop the plague. It doesn't work."},{title:"The Church's Secret Research",text:"The upper echelons of the Church begin experimenting with direct contact with the Great Ones. They hide Ebrietas — a Great One left behind — and use her to empower their rituals."},{title:"The School of Mensis",text:"A splinter group of scholars performs a ritual to contact the Great Ones. Micolash remains in the Nightmare, endlessly chasing communion with something vast."}]},{era:"The Night of the Hunt",color:"#92400e",events:[{title:"You Arrive",text:"A stranger comes to Yharnam for blood ministration. The night of the Hunt begins. The plague is at its peak. Something is about to change."},{title:"The Blood Moon",text:"Rom the Vacuous Spider maintained a veil hiding the true state of the world. Her death triggers the Blood Moon — a permanent world-state shift. The Nightmare bleeds into reality."},{title:"The Three Endings",text:"The Hunter faces Gehrman, who offers release from the Dream. Three choices: accept death and wake, refuse and fight, or — if three Umbilical Cords have been consumed — transcend."}]}];
+
+function renderTimeline(){
+  var h='';
+  TIMELINE.forEach(function(era){
+    h+='<div class="timeline-era"><div class="timeline-era-header"><div class="timeline-dot" style="background:'+era.color+';box-shadow:0 0 8px '+era.color+'"></div><span class="timeline-era-label" style="color:'+era.color+'">'+era.era+'</span></div><div class="timeline-events">';
+    era.events.forEach(function(ev){
+      h+='<div class="timeline-event" style="border-left-color:'+era.color+'60"><div class="timeline-event-title">'+ev.title+'</div><div class="timeline-event-text">'+ev.text+'</div></div>';
+    });
+    h+='</div></div>';
+  });
+  document.getElementById('timeline-eras').innerHTML=h;
+}
+
+var tt=document.getElementById('themeToggle');
+var dark=localStorage.getItem('bb-theme')!=='light';
+if(!dark){document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';}
+tt.addEventListener('click',function(){
+  dark=!dark;
+  if(dark){document.documentElement.removeAttribute('data-theme');tt.textContent='\u2600';localStorage.setItem('bb-theme','dark');}
+  else{document.documentElement.setAttribute('data-theme','light');tt.textContent='\uD83C\uDF19';localStorage.setItem('bb-theme','light');}
+});
+
+renderTimeline();
+</script>
+</body>
+</html>

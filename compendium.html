@@ -50,10 +50,7 @@
   <button class="tab-btn" data-tab="bosses">Bosses</button>
   <button class="tab-btn" data-tab="bestiary">Bestiary</button>
   <button class="tab-btn" data-tab="locations">Locations</button>
-  <button class="tab-btn" data-tab="timeline">Timeline</button>
   <button class="tab-btn" data-tab="quests">Quests</button>
-  <button class="tab-btn" data-tab="recap">Recap</button>
-  <button class="tab-btn" data-tab="journal">Journal</button>
 </nav>
 
 <main class="page-wrap" style="padding-top:0.25rem;padding-bottom:1rem">
@@ -82,28 +79,7 @@
 <section class="tab-panel" id="tab-bosses"><p class="section-intro">Amber bar = required. Grey bar = optional.</p><div id="boss-cards"></div></section>
 <section class="tab-panel" id="tab-bestiary"><p class="section-intro">Enemies grouped by type. Unlocks on first encounter.</p><div id="bestiary-cards"></div></section>
 <section class="tab-panel" id="tab-locations"><p class="section-intro">Every location, unlocked as you explore.</p><div id="location-cards"></div></section>
-<section class="tab-panel" id="tab-timeline"><p class="section-intro">Yharnam's history told forwards. The game tells it backwards.</p><div class="timeline-wrap"><div class="timeline-spine tl-spine-color"></div><div id="timeline-eras"></div></div></section>
 <section class="tab-panel" id="tab-quests"><p class="section-intro">NPC questlines have no in-game tracking. Tap steps to mark complete. Red = missable.</p><div id="quest-cards"></div></section>
-<section class="tab-panel" id="tab-recap">
-  <p class="section-intro">A running record of each session. Your previously-on reference.</p>
-  <div class="surface-box session-form mb-md">
-    <p class="eyebrow" style="margin-bottom:0.6rem">Log a Session</p>
-    <label class="field-label">Session name / number</label><input type="text" id="recapSession" placeholder="e.g. Session 3">
-    <label class="field-label mt-sm">Area reached</label><input type="text" id="recapArea" placeholder="e.g. Cathedral Ward">
-    <label class="field-label mt-sm">Bosses defeated</label><input type="text" id="recapBosses" placeholder="e.g. Cleric Beast, Father Gascoigne">
-    <label class="field-label mt-sm">Notes / highlights</label><textarea id="recapNotes" rows="3" placeholder="What happened? What was memorable?"></textarea>
-    <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;padding:0.55rem" onclick="addRecap()">Save Session</button>
-  </div>
-  <div id="recap-list"></div>
-</section>
-<section class="tab-panel" id="tab-journal">
-  <p class="section-intro">Theories, questions, moments worth remembering.</p>
-  <div class="surface-box mb-md">
-    <textarea id="journalInput" rows="3" placeholder="Write a note, theory, or question..."></textarea>
-    <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;padding:0.5rem" onclick="addJournalEntry()">Add Entry</button>
-  </div>
-  <div id="journal-list"><p class="empty-state">No entries yet. The night is long.</p></div>
-</section>
 </main>
 
 <footer class="site-footer">Fear the Old Blood &nbsp;&middot;&nbsp; <a href="index.html" style="color:var(--text-faint)">&larr; Back to Hub</a></footer>
@@ -581,17 +557,7 @@ function renderLocations(){
   document.getElementById('location-cards').innerHTML=h;
 }
 
-function renderTimeline(){
-  var h='';
-  TIMELINE.forEach(function(era){
-    h+='<div class="timeline-era"><div class="timeline-era-header"><div class="timeline-dot" style="background:'+era.color+';box-shadow:0 0 8px '+era.color+'"></div><span class="timeline-era-label" style="color:'+era.color+'">'+era.era+'</span></div><div class="timeline-events">';
-    era.events.forEach(function(ev){
-      h+='<div class="timeline-event" style="border-left-color:'+era.color+'60"><div class="timeline-event-title">'+ev.title+'</div><div class="timeline-event-text">'+ev.text+'</div></div>';
-    });
-    h+='</div></div>';
-  });
-  document.getElementById('timeline-eras').innerHTML=h;
-}
+
 
 function renderQuests(){
   var h='';
@@ -626,41 +592,13 @@ function renderQuests(){
 
 function toggleStep(id){state.quest[id]=!state.quest[id];save();renderQuests();}
 
-function renderRecaps(){
-  if(!state.recaps.length){document.getElementById('recap-list').innerHTML='<p class="empty-state">No sessions logged yet.</p>';return;}
-  var h='';
-  state.recaps.forEach(function(r){
-    h+='<div class="recap-card">'+
-      '<div class="recap-header"><span style="font-weight:600;font-family:var(--font-display);font-size:0.88rem">'+r.session+'</span><span style="font-size:0.62rem;color:var(--text-faint)">'+r.date+'</span></div>'+
-      '<div class="recap-body">'+
-        (r.area?'<div class="recap-row">Area: '+r.area+'</div>':'')+
-        (r.bosses?'<div class="recap-row bosses">Bosses: '+r.bosses+'</div>':'')+
-        (r.notes?'<div class="recap-notes">'+r.notes+'</div>':'')+
-      '</div></div>';
-  });
-  document.getElementById('recap-list').innerHTML=h;
-}
 
-function addRecap(){
-  var s=document.getElementById('recapSession').value.trim();if(!s)return;
-  state.recaps.unshift({session:s,area:document.getElementById('recapArea').value.trim(),bosses:document.getElementById('recapBosses').value.trim(),notes:document.getElementById('recapNotes').value.trim(),date:new Date().toLocaleDateString()});
-  save();
-  ['recapSession','recapArea','recapBosses','recapNotes'].forEach(function(id){document.getElementById(id).value='';});
-  renderRecaps();
-}
 
-function renderJournal(){
-  if(!state.journal.length){document.getElementById('journal-list').innerHTML='<p class="empty-state">No entries yet. The night is long.</p>';return;}
-  var h='';
-  state.journal.forEach(function(e){h+='<div class="journal-entry"><div class="journal-entry-text">'+e.text+'</div><div class="journal-entry-time">'+e.time+'</div></div>';});
-  document.getElementById('journal-list').innerHTML=h;
-}
 
-function addJournalEntry(){
-  var el=document.getElementById('journalInput'),text=el.value.trim();if(!text)return;
-  state.journal.unshift({text:text,time:new Date().toLocaleTimeString()});
-  el.value='';save();renderJournal();
-}
+
+
+
+
 
 document.getElementById('journalInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addJournalEntry();}});
 
@@ -686,7 +624,7 @@ var dt=document.getElementById('dlcToggle');
 if(state.dlc)dt.classList.add('on');
 dt.addEventListener('click',function(){state.dlc=!state.dlc;dt.classList.toggle('on',state.dlc);save();renderAll();});
 
-function renderAll(){renderPrimer();renderProgress();renderGlossary();renderCharacters();renderBosses();renderBestiary();renderLocations();renderTimeline();renderQuests();renderRecaps();renderJournal();}
+function renderAll(){renderPrimer();renderProgress();renderGlossary();renderCharacters();renderBosses();renderBestiary();renderLocations();renderQuests();}
 renderAll();
 </script>
 </body>
