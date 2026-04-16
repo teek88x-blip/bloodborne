@@ -68,7 +68,7 @@
 <!-- SEARCH BAR -->
 <div id="searchWrap" style="display:none;padding:0.5rem 1rem;border-bottom:1px solid var(--border-sub);position:sticky;top:96px;z-index:95;background:var(--bg);backdrop-filter:blur(8px)">
   <div style="position:relative">
-    <input type="search" id="searchInput" placeholder="Search bosses, NPCs, enemies, locations..." style="padding-left:2rem;font-size:0.82rem">
+    <input type="text" id="searchInput" placeholder="Search bosses, NPCs, enemies, locations..." style="padding-left:2rem;font-size:0.82rem" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     <span style="position:absolute;left:0.6rem;top:50%;transform:translateY(-50%);color:var(--text-faint);font-size:0.85rem;pointer-events:none">&#128269;</span>
   </div>
   <div id="searchResults" style="margin-top:0.5rem;display:flex;flex-direction:column;gap:0.3rem"></div>
@@ -851,8 +851,10 @@ document.getElementById('searchResults').addEventListener('click', function(e){
   }, 80);
 });
 
-document.getElementById('searchInput').addEventListener('input', function(){ doSearch(this.value); });
-document.getElementById('searchInput').addEventListener('keydown', function(e){ if(e.key==='Escape') toggleSearch(); });
+var _si = document.getElementById('searchInput');
+_si.addEventListener('input',   function(){ doSearch(this.value); });
+_si.addEventListener('keyup',   function(){ doSearch(this.value); });
+_si.addEventListener('keydown', function(e){ if(e.key==='Escape') toggleSearch(); });
 renderAll();
 </script>
 </body>
