@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weapon Guide — Bloodborne</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.back-link{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);text-decoration:none;transition:color var(--transition)}
+.back-link:hover{color:var(--accent-s)}
+.intro-box{border:1px solid rgba(200,134,10,0.2);background:rgba(200,134,10,0.05);border-radius:var(--radius);padding:1rem 1.1rem;margin-bottom:1.5rem;font-size:0.82rem;color:var(--text-dim);line-height:1.7}
+.intro-box strong{color:var(--accent-s)}
+.weapon-card{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden;margin-bottom:0.75rem}
+.weapon-header{padding:0.85rem 1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;transition:background var(--transition)}
+.weapon-header:hover{background:var(--accent-dim)}
+.weapon-name{font-family:var(--font-display);font-size:0.95rem;font-weight:600;color:var(--accent-s);margin-bottom:0.2rem}
+.weapon-tagline{font-size:0.75rem;color:var(--text-dim);font-style:italic}
+.weapon-type{font-size:0.55rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);padding:2px 7px;border-radius:2px;border:1px solid;flex-shrink:0;margin-left:0.5rem;margin-top:0.1rem}
+.weapon-body{display:none;padding:0 1rem 1rem;border-top:1px solid var(--border-sub)}
+.weapon-card.open .weapon-body{display:block}
+.weapon-card.open .weapon-chevron{transform:rotate(180deg)}
+.weapon-chevron{color:var(--text-faint);font-size:0.7rem;transition:transform var(--transition);flex-shrink:0;margin-top:0.25rem}
+.weapon-section{margin-top:0.75rem}
+.weapon-section-label{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font-display);color:var(--accent);margin-bottom:0.3rem}
+.weapon-section-text{font-size:0.82rem;color:var(--text-mid);line-height:1.7}
+.trick-callout{border:1px solid rgba(200,134,10,0.3);background:rgba(200,134,10,0.07);border-radius:var(--radius);padding:0.65rem 0.85rem;margin-top:0.65rem;font-size:0.8rem;color:var(--text-mid);line-height:1.65}
+.trick-callout strong{color:var(--accent-s)}
+.section-title{font-family:var(--font-display);font-size:0.62rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--text-dim);margin:1.5rem 0 0.6rem;padding-bottom:0.35rem;border-bottom:1px solid var(--border-sub)}
+.firearm-card{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:0.75rem 0.9rem;margin-bottom:0.5rem}
+.firearm-name{font-family:var(--font-display);font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.2rem}
+.firearm-text{font-size:0.8rem;color:var(--text-mid);line-height:1.65}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <a href="index.html" class="back-link">&larr; Hub</a>
+    <h1 style="font-size:1.2rem;margin-top:0.15rem">Weapon Guide</h1>
+  </div>
+  <button class="btn btn-icon" id="themeToggle">&#9728;</button>
+</header>
+
+<main class="page-wrap" style="padding-top:1.25rem;padding-bottom:2rem">
+
+<div class="intro-box">
+  <strong>Trick weapons</strong> are Bloodborne's defining mechanic. Every main weapon has two forms — a compact form and an extended form — switched with a button press mid-combat. This isn't just cosmetic: both forms have completely different movesets, weights, and uses. Watching a skilled player switch fluidly between them is one of the game's great pleasures as a spectator.
+</div>
+
+<p class="section-title">Main Weapons (Trick Weapons)</p>
+<div id="weapons-list"></div>
+
+<p class="section-title">Firearms (Off-hand)</p>
+<div id="firearms-list"></div>
+
+</main>
+
+<footer class="site-footer">Fear the Old Blood &nbsp;&middot;&nbsp; <a href="index.html" style="color:var(--text-faint)">&larr; Back to Hub</a></footer>
+
+<script>
+var WEAPONS = [
+  {
+    name:"Hunter Axe",
+    tagline:"The beginner's weapon. Simple, brutal, and secretly excellent.",
+    type:"Trick Weapon",
+    typeColor:"#b45309",
+    forms:["Compact hatchet — fast, one-handed swings","Extended great axe — slow, massive area coverage"],
+    lore:"The Hunter Axe is the most straightforward weapon in the game — a hatchet that extends into a greataxe. It was the first weapon the Healing Church's hunters were trained with, and the transformation is the most legible in the game: small becomes large, fast becomes powerful. Players who stick with the Hunter Axe past the early game tend to value reliability over style. There's something to be said for that in Yharnam.",
+    watcher:"The extended form's charged attack is one of the most satisfying things to watch in Bloodborne — a full overhead swing that staggers almost anything it hits. Watch for the player to use it when they need to interrupt an enemy's momentum. The trick transformation mid-combo, where the player extends the axe mid-swing, is a sign of a player who has fully learned the weapon."
+  },
+  {
+    name:"Threaded Cane",
+    tagline:"A gentleman's walking stick that becomes a serrated whip.",
+    type:"Trick Weapon",
+    typeColor:"#0f766e",
+    forms:["Compact cane — precise, quick thrusts and slashes","Extended whip — wide sweeping range, hits multiple enemies"],
+    lore:"The Threaded Cane is Cainhurst aristocracy made weapon — elegant, fashionable, and concealing something vicious. The transformation from cane to whip is the game's most thematically loaded: Yharnam presents itself as a civilised city of medicine and faith while hiding something feral underneath. The cane is the city's face. The whip is what's underneath. Players who choose this weapon often have a particular style in mind — something graceful and controlled that can turn brutal when needed.",
+    watcher:"The whip form's range is what makes it interesting to watch — it can hit enemies the player seems too far away to reach. Watch for the player using it to control groups of enemies, sweeping wide arcs to keep space. The cane form's thrust attacks are excellent for the visceral counter the game rewards, so watch for the player switching back mid-whip-combo to land a parry."
+  },
+  {
+    name:"Saw Cleaver",
+    tagline:"The most efficient weapon in the game. Graceless by design.",
+    type:"Trick Weapon",
+    typeColor:"#9f1239",
+    forms:["Compact — fast, straightforward slashing","Extended — unfolds with serrated teeth, increased damage to beasts"],
+    lore:"The Saw Cleaver was purpose-built to kill beasts — the serrated teeth in its extended form tear through beast flesh specifically. It is not elegant. It has no aristocratic heritage, no Cainhurst lineage, no Church blessing. It's a tool made to do a brutal job efficiently. Many experienced players consider it the best weapon in the game precisely because it commits fully to what Bloodborne is actually about: fighting monsters in the dark, quickly, before they kill you.",
+    watcher:"Less visually spectacular than other weapons but watch for the damage numbers — they're consistently high against beast enemies, which is most of the early game. The transformation attack, where the player extends the cleaver mid-swing, extends combos in ways that catch new players off guard when they first encounter it."
+  },
+  {
+    name:"Kirkhammer",
+    tagline:"A silver sword that conceals an absurd stone hammer.",
+    type:"Trick Weapon",
+    typeColor:"#7c3aed",
+    forms:["Compact — a silver sword, fast and precise","Extended — a gigantic stone church hammer, enormous and devastating"],
+    lore:"The Kirkhammer belongs to the Healing Church's hunters — the silver sword is a Church weapon, and the hammer it conceals is a church hammer, the kind used in construction and ceremony. The transformation is a joke with a punchline: what looks like an elegant religious sword is actually just a handle for something enormous. The Church often worked like this. Players who use the Kirkhammer tend to enjoy the comedy of the switch as much as the utility.",
+    watcher:"The hammer form is the funniest weapon in the game to watch because of how absurdly large it is relative to the player character. Enemies get launched. Watch for the player using the transformation attack specifically — extending mid-swing creates a combo that deals staggering damage. The slam attacks leave shockwave effects on the ground. It's visually spectacular in a way most weapons aren't."
+  },
+  {
+    name:"Ludwigs Holy Blade",
+    tagline:"A greatsword that transforms into a holy blade. The definitive weapon of the Hunt.",
+    type:"Trick Weapon",
+    typeColor:"#1d4ed8",
+    forms:["Compact — a versatile straightsword, fast and balanced","Extended — a massive two-handed greatsword with holy properties"],
+    lore:"Ludwig's Holy Blade is named after Ludwig, the first hunter recruited by the Healing Church. It is, in many ways, the definitive hunter's weapon — balanced, powerful, blessed by the Church, capable of fighting both beasts and the Kin that come later. When Ludwig fights in the DLC's second phase, he uses this sword. The moonlight it emits in that fight — and in the hands of skilled players — is one of the most visually iconic images in the game.",
+    watcher:"One of the best weapons to watch because of the sheer visual weight of the greatsword form. The charged attacks in extended form deal some of the highest single-hit damage in the game. Watch for the moonlight properties — players who have upgraded it fully emit light arcs on certain attacks. Ludwig's second phase in the DLC is the most dramatic demonstration of what this weapon looks like at its peak."
+  },
+  {
+    name:"Blade of Mercy",
+    tagline:"Twin daggers that require mastery to use — and are devastating when mastered.",
+    type:"Trick Weapon",
+    typeColor:"#065f46",
+    forms:["Single dagger — fast, precise strikes","Dual daggers — extremely fast dual-wield flurry"],
+    lore:"The Blade of Mercy comes from Eileen the Crow — it is the weapon of the Hunter of Hunters covenant. Its design reflects its purpose: precise, fast, and final. It doesn't have the showy transformation of the Kirkhammer or the weight of Ludwig's Holy Blade. It's built for ending things quickly and cleanly. Players who choose this weapon have usually played enough to know that speed and precision matter more than raw power.",
+    watcher:"The most technically impressive weapon to watch when used well. The dual-dagger form produces some of the fastest attack sequences in the game — a skilled player can land eight to ten hits before an enemy can respond. Watch for the rhythm of it: the rapid-fire combos followed by a brief recovery window. It looks almost like dancing."
+  },
+  {
+    name:"Rifle Spear",
+    tagline:"A cleaver with a rifle barrel. Uses its firearm mid-combo.",
+    type:"Trick Weapon",
+    typeColor:"#57534e",
+    forms:["Compact — a large cleaver blade","Extended — a long thrusting spear with an integrated rifle"],
+    lore:"The Rifle Spear is perhaps the most literally Bloodborne weapon in the game — a cleaver with a gun built into it. The Powder Kegs, the renegade workshop faction who made it, were known for combining weapons and firearms in ways the main Church workshop considered excessive. Djura in Old Yharnam is a Powder Keg hunter. The Rifle Spear fires from within its spear form, allowing players to shoot at range without switching to their off-hand firearm.",
+    watcher:"One of the more unusual weapons to watch because of the built-in firearm — players can shoot with it mid-combo, creating a hybrid range-and-melee playstyle. The spear form's thrusting attacks are excellent against specific enemy types. Less commonly used than some other weapons, so if your player has it, they've made a deliberate stylistic choice."
+  },
+  {
+    name:"Burial Blade",
+    tagline:"Gehrman's scythe. The weapon of the First Hunter.",
+    type:"Trick Weapon",
+    typeColor:"#4c1d95",
+    forms:["Compact — a curved sword","Extended — a full scythe"],
+    lore:"The Burial Blade is Gehrman's weapon — the scythe he used as the First Hunter and that he wields against you in the final boss fight. You cannot obtain it until after the game's first playthrough. It is, in every sense, a new-game-plus weapon: something you earn by completing the cycle, by learning enough to choose something different the second time. Players who use it are wearing a symbol of everything the Hunt costs.",
+    watcher:"The most thematically loaded weapon in the game. If your player is using it, they've beaten the game at least once and made a choice to return. The scythe form's wide arcs are visually spectacular — sweeping attacks that cover enormous area. It is exactly what you'd imagine the weapon of the First Hunter to look like."
+  },
+  {
+    name:"Tonitrus",
+    tagline:"A mace that generates electricity. Science dressed as a club.",
+    type:"Trick Weapon",
+    typeColor:"#1d4ed8",
+    forms:["Compact — a simple mace","Extended — charged with bolt damage via mechanical mechanism"],
+    lore:"The Tonitrus was created by Byrgenwerth scholars — it generates electricity through a mechanism rather than through blood or blessing. In a game full of faith and blood, it's a purely mechanical solution. The fact that it works — and works well against Kin enemies — is one of Bloodborne's quiet arguments that knowledge and technology have their place alongside the mystical.",
+    watcher:"The transformation here is different from most — the extended form isn't a different shape but a charged state, crackling with electricity. Watch for the activation moment: the player extends it and blue-white lightning wraps the weapon. It's one of the more visually distinctive transformations in the game."
+  },
+  {
+    name:"Simon's Bowblade",
+    tagline:"A short sword that becomes a bow. Range in a close-combat game.",
+    type:"Trick Weapon",
+    typeColor:"#0f766e",
+    forms:["Compact — a short sword for close quarters","Extended — a fully functional bow for ranged attacks"],
+    lore:"Simon the Harrowed's weapon — one of the Old Hunters you meet in the DLC. He uses it specifically because he's not a conventional hunter; he's a truth-seeker who came to the Nightmare to find answers, not to kill things. The bow form reflects this: he wants to maintain distance, to observe, to understand before engaging. The weapon suits a character who has been thinking more than fighting.",
+    watcher:"The only weapon in the game with a dedicated ranged form. The bow fires actual arrows, allowing the player to attack at distances no other weapon can reach. Watch for the player switching between the sword and the bow fluidly — using the bow to wear enemies down from range before closing in with the sword. A player who uses this weapon well makes fights look remarkably controlled."
+  }
+];
+
+var FIREARMS = [
+  {
+    name:"Hunter Pistol",
+    text:"The standard firearm. Fires quickly, modest range. The most common choice because reliability matters more than power when you need a precise parry window. The sound it makes — a crisp, sharp crack — is one of the most satisfying sounds in Bloodborne."
+  },
+  {
+    name:"Hunter Blunderbuss",
+    text:"A wide-spread shotgun-style weapon. Less precise for parrying but catches multiple enemies in one shot. Players who use this are either compensating for imprecise timing or dealing with crowds. The visual of the spread pellets is more dramatic than the pistol."
+  },
+  {
+    name:"Repeating Pistol",
+    text:"Fires twice per trigger pull, consuming double bullets. The damage is significant enough to stagger most enemies cleanly. Watch for the double-crack of the sound effect — players who use this have usually decided the extra damage is worth the resource cost."
+  },
+  {
+    name:"Evelyn",
+    text:"A Cainhurst pistol — aristocratic, powerful, scales with Arcane. If your player is using this, they've been to Cainhurst and made a build choice that reflects it. It has a distinctly different sound and visual to the standard pistol."
+  },
+  {
+    name:"Cannon",
+    text:"Uses Quicksilver Bullets in batches and deals enormous damage. Rarely used because of the resource cost but spectacular when it appears. Watch for the player being very selective about when they fire it — usually a boss's vulnerable phase."
+  }
+];
+
+var expandState = {};
+
+function toggleCard(header){
+  var card = header.parentElement;
+  var id = card.getAttribute('data-id');
+  card.classList.toggle('open');
+  expandState[id] = card.classList.contains('open');
+}
+
+function render(){
+  var wh = '';
+  WEAPONS.forEach(function(w, i){
+    var id = 'w-' + i;
+    var open = expandState[id] || false;
+    wh += '<div class="weapon-card ' + (open?'open':'') + '" data-id="' + id + '">';
+    wh += '<div class="weapon-header" onclick="toggleCard(this)">';
+    wh += '<div><div class="weapon-name">' + w.name + '</div><div class="weapon-tagline">' + w.tagline + '</div></div>';
+    wh += '<div style="display:flex;align-items:flex-start;gap:0.4rem">';
+    wh += '<span class="weapon-type" style="color:' + w.typeColor + ';border-color:' + w.typeColor + '">' + w.type + '</span>';
+    wh += '<span class="weapon-chevron">&and;</span>';
+    wh += '</div></div>';
+    wh += '<div class="weapon-body">';
+    // Forms
+    wh += '<div class="weapon-section"><div class="weapon-section-label">Two Forms</div>';
+    wh += '<div style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.1rem">';
+    w.forms.forEach(function(f, fi){
+      wh += '<div style="display:flex;gap:0.5rem;align-items:flex-start;font-size:0.8rem;color:var(--text-mid)">';
+      wh += '<span style="font-family:var(--font-display);font-size:0.6rem;color:var(--accent);padding-top:0.1rem;flex-shrink:0">' + (fi===0?'I':'II') + '</span>';
+      wh += '<span>' + f + '</span></div>';
+    });
+    wh += '</div></div>';
+    // Lore
+    wh += '<div class="weapon-section"><div class="weapon-section-label">Background</div>';
+    wh += '<div class="weapon-section-text">' + w.lore + '</div></div>';
+    // Watcher tips
+    wh += '<div class="trick-callout"><strong>What to watch for:</strong> ' + w.watcher + '</div>';
+    wh += '</div></div>';
+  });
+
+  var fh = '';
+  FIREARMS.forEach(function(f){
+    fh += '<div class="firearm-card"><div class="firearm-name">' + f.name + '</div><div class="firearm-text">' + f.text + '</div></div>';
+  });
+
+  document.getElementById('weapons-list').innerHTML = wh;
+  document.getElementById('firearms-list').innerHTML = fh;
+}
+
+var tt = document.getElementById('themeToggle');
+var dark = localStorage.getItem('bb-theme') !== 'light';
+if(!dark){ document.documentElement.setAttribute('data-theme','light'); tt.textContent = '\uD83C\uDF19'; }
+tt.addEventListener('click', function(){
+  dark = !dark;
+  if(dark){ document.documentElement.removeAttribute('data-theme'); tt.textContent = '\u2600'; localStorage.setItem('bb-theme','dark'); }
+  else { document.documentElement.setAttribute('data-theme','light'); tt.textContent = '\uD83C\uDF19'; localStorage.setItem('bb-theme','light'); }
+});
+
+var currentArea = parseInt(localStorage.getItem('bb-area')||'0');
+if(currentArea > 14) document.documentElement.setAttribute('data-bloodmoon','1');
+
+render();
+</script>
+</body>
+</html>

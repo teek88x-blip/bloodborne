@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watcher Tips — Bloodborne</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.back-link{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);text-decoration:none;transition:color var(--transition)}
+.back-link:hover{color:var(--accent-s)}
+.intro-box{border:1px solid rgba(200,134,10,0.2);background:rgba(200,134,10,0.05);border-radius:var(--radius);padding:1rem 1.1rem;margin-bottom:1.5rem;font-size:0.82rem;color:var(--text-dim);line-height:1.7}
+.intro-box strong{color:var(--accent-s)}
+.area-section{margin-bottom:2rem}
+.area-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border-sub)}
+.area-name{font-family:var(--font-display);font-size:0.95rem;font-weight:600;color:var(--accent-s)}
+.area-phase{font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-faint);border:1px solid var(--border);border-radius:2px;padding:1px 6px}
+.tip-item{display:flex;gap:0.75rem;padding:0.65rem 0.75rem;border-radius:var(--radius);border:1px solid var(--border-sub);background:var(--surface);margin-bottom:0.45rem}
+.tip-icon{font-size:1rem;flex-shrink:0;margin-top:0.05rem}
+.tip-text{font-size:0.82rem;color:var(--text-mid);line-height:1.65}
+.tip-text strong{color:var(--text);font-weight:600}
+.tip-item.locked{opacity:0.35}
+.tip-item.locked .tip-text{color:var(--text-faint)}
+.locked-notice{text-align:center;color:var(--text-faint);font-size:0.72rem;font-style:italic;padding:0.5rem 0;font-family:var(--font-body)}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <a href="index.html" class="back-link">&larr; Hub</a>
+    <h1 style="font-size:1.2rem;margin-top:0.15rem">Watcher Tips</h1>
+  </div>
+  <button class="btn btn-icon" id="themeToggle">&#9728;</button>
+</header>
+
+<main class="page-wrap" style="padding-top:1.25rem;padding-bottom:2rem">
+
+<div class="intro-box">
+  <strong>For the person in the chair.</strong> These are things worth watching for as the player moves through Yharnam — moments, details, and patterns that are easy to miss but make the game richer. Entries unlock as the player progresses.
+</div>
+
+<div id="tips-content"></div>
+
+</main>
+
+<footer class="site-footer">Fear the Old Blood &nbsp;&middot;&nbsp; <a href="index.html" style="color:var(--text-faint)">&larr; Back to Hub</a></footer>
+
+<script>
+var TIPS = [
+  {area:"Central Yharnam", phase:"Early Game", unlocksAt:1, tips:[
+    {icon:"&#128065;", text:"<strong>Watch the environment, not just the combat.</strong> The village isn't randomly destroyed — look at what's barricaded, what's on fire, where the torches are placed. The residents knew this was coming and prepared. That tells you something about how often this has happened before."},
+    {icon:"&#128172;", text:"<strong>Listen to what the villagers shout.</strong> They're not just hostile — they're calling out to each other, warning each other, praying. The game treats them as a community in the middle of something terrible, not as obstacles."},
+    {icon:"&#128123;", text:"<strong>The first giant beast on the bridge is optional.</strong> Most players fight it anyway because it's right there. Watch whether your player engages or runs past — it's an early signal of their instincts."},
+    {icon:"&#128214;", text:"<strong>Item descriptions are lore.</strong> Every time the player reads an item pickup, there's usually a sentence of world-building in it. Worth glancing at when they pause to check inventory."}
+  ]},
+  {area:"Father Gascoigne", phase:"Early Game", unlocksAt:2, tips:[
+    {icon:"&#127925;", text:"<strong>The music box.</strong> If your player has the music box from the girl in the window, they can use it during the fight. Watch what happens when they do — Gascoigne pauses. He can still hear the lullaby. That's the whole tragedy in one moment."},
+    {icon:"&#128148;", text:"<strong>His wife Viola is dead nearby.</strong> Her body is outside the fog gate. The Red Jewelled Brooch on her belongs to their daughter — the same girl who gave her father the music box. Gascoigne was looking for his wife when he lost himself."},
+    {icon:"&#128064;", text:"<strong>He fights like a hunter.</strong> He has the same moveset as the player in phase one. He knows everything they know. Watch how the fight shifts in phase two when the beast takes over completely — there's a specific moment where he stops being a hunter and becomes something else."}
+  ]},
+  {area:"Cathedral Ward", phase:"Early Game", unlocksAt:3, tips:[
+    {icon:"&#9763;", text:"<strong>The Healing Church architecture tells a story.</strong> Notice how it's built on top of older structures — the Workshop underneath is far more functional and less grand than the Cathedral above it. The Church literally built itself over what came before."},
+    {icon:"&#128065;", text:"<strong>The giants in Cathedral Ward are different from beasts.</strong> They move slowly and deliberately, they carry coffins, and they used to be human staff of the Church. The transformation makes them bigger but keeps them doing their jobs, in a way."},
+    {icon:"&#128172;", text:"<strong>Eileen the Crow's presence here is significant.</strong> If your player talks to her, she mentions she's hunting someone. She won't say who yet. It will become relevant."}
+  ]},
+  {area:"Old Yharnam", phase:"Early Game", unlocksAt:4, tips:[
+    {icon:"&#128293;", text:"<strong>This place was burned on purpose.</strong> The Healing Church did this — sealed the gates and set fire to the district to contain the scourge. The fire didn't work. The beasts survived. The Church then pretended this district didn't exist."},
+    {icon:"&#128065;", text:"<strong>Djura on the tower.</strong> He's shooting at your player — but watch who he's protecting. He's not defending the district from the beasts. He's defending the beasts from hunters. Pay attention to what he says if your player manages to reach him peacefully."},
+    {icon:"&#128139;", text:"<strong>The beasts here are different — they breathe fire.</strong> They survived a burning. The plague and the flames together have done something to them. The game doesn't explain this directly; it just shows you."}
+  ]},
+  {area:"Hemwick Charnel Lane", phase:"Early Game", unlocksAt:6, tips:[
+    {icon:"&#128128;", text:"<strong>Hemwick is where Yharnam buries its dead.</strong> The Grave Women who attack your player are the people who worked here — tending corpses, managing the boundary between living and dead. The game implies they've been doing this long enough to be changed by it."},
+    {icon:"&#128065;", text:"<strong>The Mad Ones are summoned, not indigenous.</strong> They appear when the Witches call them. They seem insectoid and strange — categorised as Kin rather than beasts. This is the first hint that there's a third category of enemy beyond 'beast' and 'human'."}
+  ]},
+  {area:"Forbidden Woods", phase:"Mid Game", unlocksAt:9, tips:[
+    {icon:"&#128065;", text:"<strong>There's a village in the woods.</strong> Look at the buildings — they're not abandoned. People live here. The Church has been using this village for blood experiments, isolated from the rest of Yharnam. The residents never agreed to any of this."},
+    {icon:"&#128123;", text:"<strong>The snakes are everywhere.</strong> Snake-infested enemies, snake imagery on the architecture. This connects to Pthumerian worship — snakes appear in the deep dungeons beneath Yharnam. Something very old is present in these woods."},
+    {icon:"&#128214;", text:"<strong>There's a back door to Iosefka's clinic here.</strong> If your player finds it, watch what they discover about where the people they sent to Iosefka for safety have gone."}
+  ]},
+  {area:"Cainhurst Castle", phase:"Mid Game", unlocksAt:10, tips:[
+    {icon:"&#128248;", text:"<strong>You arrive by ghost carriage.</strong> This is one of the most visually distinctive entrances in the game — fog, a skeletal horse, a carriage that appears only under specific conditions. The game is signalling that this place operates by different rules."},
+    {icon:"&#128081;", text:"<strong>The castle feels frozen.</strong> The court died here during the Executioners' siege, generations ago. The servants still patrol. Annalise still sits in her throne room. Everything has continued in a kind of suspended state since the massacre."},
+    {icon:"&#128065;", text:"<strong>Annalise is immortal.</strong> She cannot die. The Executioners couldn't kill her — Logarius died to seal her away instead. When your player meets her, she is entirely unsurprised to have a visitor after all this time."}
+  ]},
+  {area:"Byrgenwerth", phase:"Mid Game", unlocksAt:13, tips:[
+    {icon:"&#128214;", text:"<strong>Master Willem is on the balcony.</strong> He won't speak — he's past that. But notice what he's looking at: the lake, where Rom is. He sent her there. Whether that was mercy or abandonment is unclear."},
+    {icon:"&#128065;", text:"<strong>The college is full of spider webs.</strong> Rom's influence spreads outward from the lake even here. Everything in Byrgenwerth is coated in the residue of what Willem's pursuit of knowledge produced."},
+    {icon:"&#9888;", text:"<strong>Pay attention to the password item.</strong> Vicar Amelia was guarding a gold pendant that contains a password. Your player should use it here. What it reveals reframes the early game significantly."}
+  ]},
+  {area:"Rom, the Vacuous Spider", phase:"Mid Game", unlocksAt:14, tips:[
+    {icon:"&#127754;", text:"<strong>After this fight, look at the sky.</strong> The Blood Moon rising is one of the most important visual moments in the game. The world permanently changes here. It's worth pausing to take it in."},
+    {icon:"&#128065;", text:"<strong>Rom maintained a veil.</strong> She was hiding the true state of the world from ordinary perception. The Amygdalae that have been clinging to buildings throughout Yharnam — invisible until now — are suddenly visible after sufficient Insight. They were always there."},
+    {icon:"&#128172;", text:"<strong>Check in with any NPCs your player sent to safety.</strong> The Blood Moon affects everyone not safely housed. This is the most important housekeeping moment in the game for NPC questlines."}
+  ]},
+  {area:"Yahar'gul", phase:"Late Game", unlocksAt:15, tips:[
+    {icon:"&#128065;", text:"<strong>The streets are different now.</strong> After the Blood Moon, Yahar'gul has new enemies — stronger versions, in different positions. The world-state shift is not cosmetic. The Nightmare is bleeding into the waking world."},
+    {icon:"&#128123;", text:"<strong>The bell-ringing women summon the dead.</strong> The Mensis scholars' servants are still performing their rituals in this district. The One Reborn at the end of this area is the product of those rituals — a mass of corpses fused into something the Church was apparently trying to create."}
+  ]},
+  {area:"Lecture Building", phase:"Late Game", unlocksAt:19, tips:[
+    {icon:"&#128065;", text:"<strong>This place is between worlds.</strong> The windows look out onto different nightmares depending on which floor you're on. It's a threshold space — neither fully real nor fully dream. The students who were here have become Brainsuckers."},
+    {icon:"&#128123;", text:"<strong>Brainsuckers drain Insight on contact.</strong> This is the game's most literal statement about the cost of knowledge. These creatures literally take what you've learned away from you."}
+  ]},
+  {area:"Upper Cathedral Ward", phase:"Late Game", unlocksAt:20, tips:[
+    {icon:"&#9888;", text:"<strong>This is what the Church was really doing.</strong> The locked gate in Cathedral Ward hid this section from ordinary worshippers. The patients here have been lobotomised, their eyes sewn shut or removed. The Choir was conducting experiments in direct communion with Great Ones on living subjects."},
+    {icon:"&#128065;", text:"<strong>Ebrietas is at the end.</strong> A Great One that was left behind — abandoned by her kin or simply unable to follow. The Church found her and built a secret chapel to house her. Watch how she fights. There's something in the forward lunge that reads less like an attack and more like an embrace."}
+  ]},
+  {area:"Nightmare of Mensis", phase:"Late Game", unlocksAt:23, tips:[
+    {icon:"&#128065;", text:"<strong>The Brain of Mensis.</strong> It hangs in a cage and does nothing — it just exists. But being near it drains Insight and can inflict Frenzy. The School of Mensis performed their ritual to contact something like this. Whether this is what they were aiming for, or what they became, is not explained."},
+    {icon:"&#128172;", text:"<strong>Micolash's dialogue is worth hearing.</strong> He's been in this Nightmare endlessly, chasing communion with the Great Ones. He got what he wanted and it looks like this. Listen to what he says about Kos — it matters for the DLC."},
+    {icon:"&#128139;", text:"<strong>Mergo is crying.</strong> The sound throughout this area is an infant crying. You never see Mergo. The Wet Nurse protecting it is not hostile — it only acts when you approach the source of the crying. Defeating it ends the crying, which ends the Hunt."}
+  ]},
+  {area:"Gehrman", phase:"Endgame", unlocksAt:25, tips:[
+    {icon:"&#128172;", text:"<strong>Listen to what Gehrman says before the fight.</strong> He's asking you to accept death as a mercy. He means it. He has watched hunters come and go for longer than anyone can remember and this is the kindest thing he knows how to offer."},
+    {icon:"&#128065;", text:"<strong>He fights like the first hunter.</strong> His moveset is the best possible expression of the game's combat — everything it has taught you, perfected. Watch how the fight feels different from every boss before it. It's not a monster fight. It's a duel."},
+    {icon:"&#9878;", text:"<strong>Three outcomes are possible from here.</strong> What your player does next determines which ending plays. If they've been collecting Umbilical Cords, a third option exists. Watch carefully."}
+  ]},
+  {area:"Hunter's Nightmare (DLC)", phase:"DLC", unlocksAt:27, tips:[
+    {icon:"&#128128;", text:"<strong>This is where the old hunters are trapped.</strong> They committed atrocities — the Fishing Hamlet massacre — and their punishment is to hunt forever in a nightmare reflection of their own history. Ludwig is here. Laurence is here. Their Nightmare is a grotesque parody."},
+    {icon:"&#128065;", text:"<strong>Ludwig's second phase is one of the most memorable moments in the game.</strong> Watch what happens when he finds his sword. The music changes. The tone changes. Do not miss this."},
+    {icon:"&#128172;", text:"<strong>After Ludwig, speak to his head.</strong> This sounds absurd. Do it anyway. The exchange that follows is one of the DLC's most important lore moments."}
+  ]},
+  {area:"Lady Maria", phase:"DLC", unlocksAt:31, tips:[
+    {icon:"&#128065;", text:"<strong>This is widely considered the best boss fight in the game.</strong> Three phases, each adding a new damage type. Watch the fight as a piece of choreography as much as a combat encounter — it's been designed to be watched."},
+    {icon:"&#128148;", text:"<strong>She was Gehrman's student.</strong> The finest hunter of her generation, from Cainhurst nobility, who rejected that heritage to become something she chose. She participated in the Fishing Hamlet massacre. The guilt broke her. She threw her weapon into a well and locked herself in this tower."},
+    {icon:"&#128172;", text:"<strong>The fight is a reckoning, not a battle.</strong> She doesn't want to be here any more than your player does. Watch her expressions and her posture — she's ashamed, not angry."}
+  ]},
+  {area:"Fishing Hamlet", phase:"DLC", unlocksAt:31, tips:[
+    {icon:"&#9876;", text:"<strong>This is the bottom of everything.</strong> The Fishing Hamlet is where the old hunters came and committed the atrocity that created the Hunter's Nightmare. The people here were slaughtered to protect the secret of what the hunters found — Kos, dead on the shore."},
+    {icon:"&#128065;", text:"<strong>The Shark Giants are the hamlet's descendants.</strong> The people who survived were transformed by their grief and proximity to Kos into something between human and deep-sea creature. They're still here. They're still protecting what the hunters tried to take."},
+    {icon:"&#128172;", text:"<strong>The Orphan of Kos's first sound is a cry.</strong> Raw, animal, bereft. It was born from its dead mother's corpse and has known nothing but grief. Pay attention to the final cutscene — it contains one of the most important lines in the entire game."}
+  ]}
+];
+
+var currentArea = parseInt(localStorage.getItem('bb-area')||'0');
+
+function render(){
+  var html = '';
+  var shown = 0, locked = 0;
+
+  TIPS.forEach(function(section){
+    var isLocked = section.unlocksAt > currentArea;
+    if(isLocked){ locked++; return; }
+    shown++;
+    html += '<div class="area-section">';
+    html += '<div class="area-header">';
+    html += '<span class="area-name">' + section.area + '</span>';
+    html += '<span class="area-phase">' + section.phase + '</span>';
+    html += '</div>';
+    section.tips.forEach(function(tip){
+      html += '<div class="tip-item"><span class="tip-icon">' + tip.icon + '</span><div class="tip-text">' + tip.text + '</div></div>';
+    });
+    html += '</div>';
+  });
+
+  if(locked > 0){
+    html += '<p class="locked-notice">' + locked + ' more section' + (locked>1?'s':'') + ' unlock as you progress through the game.</p>';
+  }
+
+  document.getElementById('tips-content').innerHTML = html;
+}
+
+// Theme
+var tt = document.getElementById('themeToggle');
+var dark = localStorage.getItem('bb-theme') !== 'light';
+if(!dark){ document.documentElement.setAttribute('data-theme','light'); tt.textContent = '\uD83C\uDF19'; }
+tt.addEventListener('click', function(){
+  dark = !dark;
+  if(dark){ document.documentElement.removeAttribute('data-theme'); tt.textContent = '\u2600'; localStorage.setItem('bb-theme','dark'); }
+  else { document.documentElement.setAttribute('data-theme','light'); tt.textContent = '\uD83C\uDF19'; localStorage.setItem('bb-theme','light'); }
+});
+
+// Blood moon theme
+if(currentArea > 14) document.documentElement.setAttribute('data-bloodmoon','1');
+
+render();
+</script>
+</body>
+</html>

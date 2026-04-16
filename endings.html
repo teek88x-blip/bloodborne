@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Endings Guide — Bloodborne</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.back-link{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:var(--text-dim);text-decoration:none;transition:color var(--transition)}
+.back-link:hover{color:var(--accent-s)}
+.lock-screen{text-align:center;padding:4rem 1rem;max-width:440px;margin:0 auto}
+.lock-icon{font-size:3rem;margin-bottom:1rem;opacity:0.4}
+.lock-title{font-family:var(--font-display);font-size:1.1rem;color:var(--accent-s);margin-bottom:0.75rem}
+.lock-text{font-size:0.85rem;color:var(--text-dim);line-height:1.7;font-style:italic}
+.lock-progress{margin-top:1.25rem;font-size:0.72rem;color:var(--text-faint);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase}
+.ending-card{border:2px solid;border-radius:var(--radius);padding:1.25rem 1.1rem;margin-bottom:1.25rem}
+.ending-number{font-size:0.58rem;letter-spacing:0.25em;text-transform:uppercase;font-family:var(--font-display);margin-bottom:0.4rem}
+.ending-title{font-family:var(--font-display);font-size:1.3rem;font-weight:600;margin-bottom:0.5rem}
+.ending-tagline{font-size:0.82rem;font-style:italic;margin-bottom:1rem;line-height:1.6}
+.ending-section{margin-bottom:0.85rem}
+.ending-section-label{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font-display);margin-bottom:0.3rem;opacity:0.7}
+.ending-section-text{font-size:0.84rem;line-height:1.75;color:var(--text-mid)}
+.ending-section-text strong{color:var(--text)}
+.req-item{display:flex;gap:0.5rem;align-items:flex-start;padding:0.35rem 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.8rem;line-height:1.55;color:var(--text-mid)}
+.req-item:last-child{border-bottom:none}
+.req-icon{flex-shrink:0;margin-top:0.05rem}
+.cord-section{border:1px solid;border-radius:var(--radius);padding:0.85rem;margin-top:0.85rem}
+.cord-title{font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;font-family:var(--font-display);margin-bottom:0.6rem}
+.cord-item{font-size:0.78rem;color:var(--text-mid);padding:0.3rem 0;border-bottom:1px solid rgba(255,255,255,0.05);line-height:1.55;display:flex;gap:0.5rem}
+.cord-item:last-child{border-bottom:none}
+.intro-note{border:1px solid rgba(200,134,10,0.2);background:rgba(200,134,10,0.05);border-radius:var(--radius);padding:1rem 1.1rem;margin-bottom:1.5rem;font-size:0.82rem;color:var(--text-dim);line-height:1.7}
+.intro-note strong{color:var(--accent-s)}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <a href="index.html" class="back-link">&larr; Hub</a>
+    <h1 style="font-size:1.2rem;margin-top:0.15rem">Endings Guide</h1>
+  </div>
+  <button class="btn btn-icon" id="themeToggle">&#9728;</button>
+</header>
+
+<main class="page-wrap" style="padding-top:1.25rem;padding-bottom:2rem">
+  <div id="content"></div>
+</main>
+
+<footer class="site-footer">Fear the Old Blood &nbsp;&middot;&nbsp; <a href="index.html" style="color:var(--text-faint)">&larr; Back to Hub</a></footer>
+
+<script>
+var UNLOCK_AT = 24; // After Mergo's Wet Nurse
+
+var ENDINGS = [
+  {
+    number:"Ending I",
+    title:"Yharnam Sunrise",
+    tagline:"Accept Gehrman's offer. The Hunter is freed from the Dream.",
+    color:"#b45309",
+    glow:"#f59e0b",
+    requirements:[
+      {icon:"&#128314;", text:"Simply agree when Gehrman asks you to accept death and leave the Dream."},
+      {icon:"&#9989;", text:"No special preparation needed. This is the default ending."}
+    ],
+    what:"Gehrman has been offering hunters this exit for as long as the Dream has existed. You accept, he kills you mercifully, and you wake up in Yharnam as the sun rises — the first sunrise seen in the game. The Hunt is over for you. Gehrman remains, tending the Dream for the next hunter. The cycle continues.",
+    meaning:"The sunrise ending is the bittersweet middle ground — you escape, but nothing changes. Gehrman is still trapped. The Dream continues. Yharnam continues. You leave it all behind. There is freedom in it, and a cost to that freedom. The sun is beautiful. It's the first and only time in the game the sky is anything other than night or blood.",
+    watcher:"The sunrise cutscene is short but the image is striking after so many hours of darkness and red sky. Watch your player's reaction — many people feel unexpectedly moved by seeing daylight. It's a good ending. It's just not the whole story."
+  },
+  {
+    number:"Ending II",
+    title:"Honoring Wishes",
+    tagline:"Refuse Gehrman. Fight for your place in the Dream — and take his.",
+    color:"#7c3aed",
+    glow:"#c4b5fd",
+    requirements:[
+      {icon:"&#9940;", text:"Refuse Gehrman's offer when he asks you to accept death."},
+      {icon:"&#9876;", text:"Defeat Gehrman in combat."},
+      {icon:"&#127754;", text:"The Moon Presence will then descend. Survive it."},
+      {icon:"&#9940;", text:"Do NOT consume three Umbilical Cords before this fight, or a different ending triggers."}
+    ],
+    what:"You refuse to leave. Gehrman is devastated — he knows what refusing means, because he made the same choice once. You fight him. If you win, the Moon Presence descends to claim you as the new caretaker. You wake Gehrman from his endless dream and watch him age and crumble in the dawn light, finally free. Then you take his chair.",
+    meaning:"This ending is about the cycle. Gehrman chose this path once and was trapped by it. Now you make the same choice and are trapped in turn. You freed him — that's genuine and good — but you did it by becoming what he was. The Hunt needed a caretaker. Now it has one again. The new Hunter's Dream begins.",
+    watcher:"Defeating the Moon Presence is required for this ending. Watch the Gehrman waking cutscene carefully — his confusion, his relief, his dissolution. He was ancient and exhausted and he is finally done. It's one of the most quietly devastating moments in the game. Then watch where the camera cuts to, and who is sitting in the chair."
+  },
+  {
+    number:"Ending III",
+    title:"Childhood's Beginning",
+    tagline:"Consume the truth. Transcend the Dream entirely.",
+    color:"#6d28d9",
+    glow:"#a78bfa",
+    requirements:[
+      {icon:"&#129514;", text:"Consume all three One Third of Umbilical Cord items before fighting Gehrman."},
+      {icon:"&#9940;", text:"Refuse Gehrman's offer."},
+      {icon:"&#9876;", text:"Defeat Gehrman."},
+      {icon:"&#127754;", text:"When the Moon Presence descends — you now have enough truth to fight back. Defeat it."}
+    ],
+    what:"You have consumed three pieces of the truth of the cosmos — fragments of connection between humans and Great Ones. When the Moon Presence descends expecting to claim you, it finds something it didn't anticipate. The fight is brief. The cutscene that follows shows the Doll cradling something small and strange. You are no longer a hunter. You are no longer human. You are something the Great Ones would recognise.",
+    meaning:"The transcendence ending is Bloodborne's most radical statement. The game has been about the violence of seeking knowledge — the cost of wanting to understand things beyond human comprehension. This ending says: what if the cost was paid? What if you understood enough? The answer is not human. But it is free. The Doll tends you now, as she tended Gehrman. Whether that is a good ending depends on what you value.",
+    watcher:"The Doll's reaction in the final cutscene is the emotional core of this ending. Watch her face. She was made by Gehrman to keep him company in his endless imprisonment — and now she has something new to tend. The cycle is broken but something replaced it. The final image is deliberately ambiguous. Let it sit.",
+    cords:[
+      {icon:"&#129514;", text:"<strong>Iosefka's Cord</strong> — From the real Iosefka in her clinic, accessed via the Forbidden Woods back entrance after the Blood Moon. She is hostile. Defeat her."},
+      {icon:"&#129514;", text:"<strong>Arianna's Cord</strong> — From Arianna, if she survived to the Oedon Chapel after the Blood Moon. She gives birth to something strange. The cord is nearby."},
+      {icon:"&#129514;", text:"<strong>Abandoned Workshop Cord</strong> — In the Hunter's Dream itself, in the Abandoned Workshop through the door past the gravestones. Easy to miss."},
+      {icon:"&#129514;", text:"<strong>Mergo's Cord</strong> — Dropped by Mergo's Wet Nurse. Only three cords are needed; this is the fourth and easiest to guarantee."}
+    ]
+  }
+];
+
+var currentArea = parseInt(localStorage.getItem('bb-area')||'0');
+
+function renderLocked(){
+  var remaining = UNLOCK_AT - currentArea;
+  return '<div class="lock-screen">'
+    + '<div class="lock-icon">&#128274;</div>'
+    + '<div class="lock-title">Not Yet</div>'
+    + '<p class="lock-text">The endings guide is locked until the player reaches the final area. It contains the most significant spoilers in the game — knowing what the endings require changes how you experience the story building toward them.</p>'
+    + '<p class="lock-progress">Unlocks after Mergo\'s Wet Nurse</p>'
+    + '</div>';
+}
+
+function renderEndings(){
+  var html = '<div class="intro-note"><strong>Three endings.</strong> The choice happens at the very end of the game, after Mergo\'s Wet Nurse. Gehrman will speak to the player. What they do next determines everything. Two of the three endings require specific preparation — this guide explains what, why, and what it all means.</div>';
+
+  ENDINGS.forEach(function(e){
+    html += '<div class="ending-card" style="border-color:' + e.color + ';box-shadow:0 0 30px ' + e.color + '18">';
+    html += '<div class="ending-number" style="color:' + e.color + '">' + e.number + '</div>';
+    html += '<div class="ending-title" style="color:' + e.glow + '">' + e.title + '</div>';
+    html += '<div class="ending-tagline" style="color:' + e.glow + '88">' + e.tagline + '</div>';
+
+    // Requirements
+    html += '<div class="ending-section"><div class="ending-section-label" style="color:' + e.color + '">Requirements</div>';
+    html += '<div style="border:1px solid ' + e.color + '30;border-radius:var(--radius);padding:0.5rem 0.75rem;background:' + e.color + '08">';
+    e.requirements.forEach(function(r){
+      html += '<div class="req-item"><span class="req-icon">' + r.icon + '</span><span>' + r.text + '</span></div>';
+    });
+    html += '</div></div>';
+
+    // What happens
+    html += '<div class="ending-section"><div class="ending-section-label" style="color:' + e.color + '">What Happens</div>';
+    html += '<div class="ending-section-text">' + e.what + '</div></div>';
+
+    // Meaning
+    html += '<div class="ending-section"><div class="ending-section-label" style="color:' + e.color + '">What It Means</div>';
+    html += '<div class="ending-section-text">' + e.meaning + '</div></div>';
+
+    // Watcher note
+    if(e.watcher){
+      html += '<div style="border:1px solid ' + e.color + '30;background:' + e.color + '08;border-radius:var(--radius);padding:0.65rem 0.85rem;margin-top:0.25rem">';
+      html += '<div style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;font-family:var(--font-display);color:' + e.color + ';margin-bottom:0.25rem">Watch For</div>';
+      html += '<div class="ending-section-text">' + e.watcher + '</div></div>';
+    }
+
+    // Umbilical Cord locations for ending 3
+    if(e.cords){
+      html += '<div class="cord-section" style="border-color:' + e.color + '40;background:' + e.color + '06;margin-top:0.85rem">';
+      html += '<div class="cord-title" style="color:' + e.color + '">Umbilical Cord Locations</div>';
+      e.cords.forEach(function(cord){
+        html += '<div class="cord-item"><span style="flex-shrink:0">' + cord.icon + '</span><span>' + cord.text + '</span></div>';
+      });
+      html += '</div>';
+    }
+
+    html += '</div>';
+  });
+  return html;
+}
+
+document.getElementById('content').innerHTML = currentArea >= UNLOCK_AT ? renderEndings() : renderLocked();
+
+var tt = document.getElementById('themeToggle');
+var dark = localStorage.getItem('bb-theme') !== 'light';
+if(!dark){ document.documentElement.setAttribute('data-theme','light'); tt.textContent = '\uD83C\uDF19'; }
+tt.addEventListener('click', function(){
+  dark = !dark;
+  if(dark){ document.documentElement.removeAttribute('data-theme'); tt.textContent = '\u2600'; localStorage.setItem('bb-theme','dark'); }
+  else { document.documentElement.setAttribute('data-theme','light'); tt.textContent = '\uD83C\uDF19'; localStorage.setItem('bb-theme','light'); }
+});
+
+if(currentArea > 14) document.documentElement.setAttribute('data-bloodmoon','1');
+</script>
+</body>
+</html>
