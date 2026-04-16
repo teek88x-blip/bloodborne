@@ -259,10 +259,10 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; letter-spac
 .card.open .card-body { display: block; }
 
 /* Art asset display */
-/* Art image — fixed 16:9 frame, any image dimensions fill it consistently */
+/* Art image — fixed frame, consistent across any image dimensions */
 .art-wrap {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 3 / 2;
   border-radius: var(--radius);
   margin-top: 0.75rem;
   border: 1px solid var(--border);
@@ -270,11 +270,13 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; letter-spac
   background: var(--surface2);
   position: relative;
 }
+/* Wider frame for location/scene art */
+.art-wrap.art-wide { aspect-ratio: 16 / 9; }
 .art-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
+  object-position: center center;
   display: block;
   filter: brightness(0.9) sepia(0.15);
   transition: filter 0.3s;
