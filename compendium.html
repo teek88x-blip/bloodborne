@@ -806,55 +806,52 @@ function doSearch(q){
   results.innerHTML = h;
 }
 
-document.getElementById('searchResults').addEventListener('click', function(e){
-  var row = e.target.closest('.search-result-row');
-  if(!row) return;
-  var tab    = row.getAttribute('data-tab');
-  var cardId = row.getAttribute('data-id');
 
-  // Close search bar
-  searchOpen = false;
-  document.getElementById('searchWrap').style.display = 'none';
-  document.getElementById('searchInput').value = '';
-  document.getElementById('searchResults').innerHTML = '';
 
-  // Switch to the correct tab
-  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
-  var tabBtn = document.querySelector('.tab-btn[data-tab="'+tab+'"]');
-  if(tabBtn) tabBtn.classList.add('active');
-  var panel = document.getElementById('tab-'+tab);
-  if(panel) panel.classList.add('active');
-
-  // Mark the card open before rendering
-  expandState[cardId] = true;
-
-  // Render the tab so the card is in the DOM
-  var renderMap = {
-    bosses:renderBosses, characters:renderCharacters,
-    bestiary:renderBestiary, locations:renderLocations,
-    glossary:renderGlossary, quests:renderQuests,
-    progress:renderProgress, primer:renderPrimer
-  };
-  if(renderMap[tab]) renderMap[tab]();
-
-  // Scroll and flash after DOM settles
-  setTimeout(function(){
-    var card = document.querySelector('[data-id="'+cardId+'"]');
-    if(card){
-      card.scrollIntoView({behavior:'smooth', block:'center'});
-      card.style.transition = 'box-shadow 0.3s';
-      card.style.boxShadow = '0 0 0 2px var(--accent)';
-      setTimeout(function(){ card.style.boxShadow = ''; }, 1200);
-    }
-  }, 80);
-});
-
-var _si = document.getElementById('searchInput');
-_si.addEventListener('input',   function(){ doSearch(this.value); });
-_si.addEventListener('keyup',   function(){ doSearch(this.value); });
-_si.addEventListener('keydown', function(e){ if(e.key==='Escape') toggleSearch(); });
 renderAll();
+
+// Attach search listeners after DOM is fully rendered
+(function attachSearch(){
+  var si = document.getElementById('searchInput');
+  var sr = document.getElementById('searchResults');
+  if(!si || !sr){
+    console.error('Search elements missing from DOM');
+    return;
+  }
+  function runSearch(){ doSearch(si.value); }
+  si.addEventListener('input',   runSearch);
+  si.addEventListener('keyup',   runSearch);
+  si.addEventListener('keydown', function(e){ if(e.key==='Escape') toggleSearch(); });
+  sr.addEventListener('click', function(e){
+    var row = e.target.closest('.search-result-row');
+    if(!row) return;
+    var tab    = row.getAttribute('data-tab');
+    var cardId = row.getAttribute('data-id');
+    searchOpen = false;
+    document.getElementById('searchWrap').style.display = 'none';
+    si.value = '';
+    sr.innerHTML = '';
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    var tabBtn = document.querySelector('.tab-btn[data-tab="'+tab+'"]');
+    if(tabBtn) tabBtn.classList.add('active');
+    var panel = document.getElementById('tab-'+tab);
+    if(panel) panel.classList.add('active');
+    expandState[cardId] = true;
+    var renderMap = {bosses:renderBosses,characters:renderCharacters,bestiary:renderBestiary,locations:renderLocations,glossary:renderGlossary,quests:renderQuests,progress:renderProgress,primer:renderPrimer};
+    if(renderMap[tab]) renderMap[tab]();
+    setTimeout(function(){
+      var card = document.querySelector('[data-id="'+cardId+'"]');
+      if(card){
+        card.scrollIntoView({behavior:'smooth',block:'center'});
+        card.style.transition='box-shadow 0.3s';
+        card.style.boxShadow='0 0 0 2px var(--accent)';
+        setTimeout(function(){ card.style.boxShadow=''; },1200);
+      }
+    },80);
+  });
+  console.log('Search listeners attached OK');
+})();
 </script>
 </body>
 </html>
