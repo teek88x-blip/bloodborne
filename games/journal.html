@@ -209,11 +209,11 @@ var SCENES = {
   }
 };
 
-var curScene='start',totalInsight=0,history=[];
+var curScene='start',totalInsight=0,pathHistory=[];
 
 function goTo(sceneId, insightGain){
-  history.push(SCENES[curScene].loc);
-  if(history.length>5)history.shift();
+  pathHistory.push(SCENES[curScene].loc);
+  if(pathHistory.length>5)pathHistory.shift();
   totalInsight+=insightGain||0;
   curScene=sceneId;
   render();
@@ -225,9 +225,9 @@ function render(){
   var app=document.getElementById('app');
   document.getElementById('insightDisplay').textContent=totalInsight+' Insight';
   var h='';
-  if(history.length){
+  if(pathHistory.length){
     h+='<div class="history-bar">';
-    history.forEach(function(loc){h+='<span class="history-step">'+loc+'</span>';});
+    pathHistory.forEach(function(loc){h+='<span class="history-step">'+loc+'</span>';});
     h+='</div>';
   }
   if(scene.ending){
@@ -252,7 +252,7 @@ function render(){
   app.innerHTML=h;
 }
 
-function resetGame(){curScene='start';totalInsight=0;history=[];render();}
+function resetGame(){curScene='start';totalInsight=0;pathHistory=[];render();}
 
 var tt=document.getElementById('themeToggle');
 var dark=localStorage.getItem('bb-theme')!=='light';
